@@ -31,6 +31,5 @@ def create_app():
 
     @app.route("/")
     def home():
-        return redirect(url_for('auth.login'))
-    return app
+        return render_template("index.html")
 
