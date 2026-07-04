@@ -29,7 +29,8 @@ def create_app():
 
     from .models import User,Company,Application,PlacementDrive
 
-    @app.route("/")
-    def home():
-        return render_template("index.html")
+    return app
+    # @app.route("/")
+    # def home():
+    #     return render_template("index.html")
 

@@ -7,47 +7,50 @@ from placementportalcode.enums.role import RoleEnum
 from placementportalcode.extensions import db
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.utils.db import save,commit_session
+from flask import jsonify
 
 
-auth_bp=Blueprint("auth",__name__)
+auth_bp=Blueprint("auth",__name__,url_prefix="/api/auth")
 
 @auth_bp.route("/login", methods=['GET','POST'])
 def login():
-    if(request.method=='GET'):
-        return render_template("auth/login.html")
+    # if(request.method=='GET'):
+    #     return render_template("auth/login.html")
     
-    #POST LOGIC
-    data=request    
+    # POST LOGIC
+    data=request.get_json()    
 
-    username=data.form.get(UserEnum.USERNAME.value)
-    password=data.form.get(UserEnum.PASSWORD.value)
+    username=data.get(UserEnum.USERNAME.value)
+    password=data.get(UserEnum.PASSWORD.value)
 
     
 
     if not username or not password:
-        flash("Missing credentials")
-        return redirect(url_for("auth.login"))
+        return error_response("Missing Credentials",None,400)
     
         
     user=User.query.filter_by(username=username).first()
 
-    if not user:
-        flash("User Not Found")
-        return redirect(url_for("auth.login"))
-
-    if not user.check_password(password):
-        flash("Invalid password")
-        return redirect(url_for("auth.login"))
+    if not user or not user.check_password(password):
+        # flash("Invalid password")
+        return error_response("Invalid Username or  Password",None,401)
     
 
     session["user_id"]=user.id
     print(user.role)
-    if user.role == RoleEnum.ADMIN.value:
-        return redirect(url_for("admin.dashboard"))
-    if user.role==RoleEnum.COMPANY.value:
-        return redirect(url_for("company.dashboard"))
-    flash(user.role)
-    return redirect(url_for("student.dashboard"))
+    # if user.role == RoleEnum.ADMIN.value:
+    #     return redirect(url_for("admin.dashboard"))
+    # if user.role==RoleEnum.COMPANY.value:
+    #     return redirect(url_for("company.dashboard"))
+    # flash(user.role)
+    # return redirect(url_for("student.dashboard"))
+    return success_response("Login Successfull",
+        {
+            "id": user.id,
+            "username": username,
+            "role": user.role
+        }
+    ,200)
 
 @auth_bp.route("/logout" , methods=[HTTPMethod.GET,HTTPMethod.POST])
 def logout():
@@ -141,3 +144,20 @@ def signup():
 
     return redirect(url_for("auth.login"))
     
+    
+@auth_bp.get("/test")
+def test():
+
+    if "user_id" not in session:
+        return jsonify({
+            "success": False,
+            "message": "Not authenticated"
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "message": "Authenticated",
+        "data": {
+            "user_id": session["user_id"]
+        }
+    })
