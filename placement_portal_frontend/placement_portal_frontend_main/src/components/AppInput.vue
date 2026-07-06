@@ -2,10 +2,15 @@
 
     <div class="mb-3">
 
-        <p v-if="error" class="text-danger mt-1 mb-0">{{ error }}</p>
-        <label class="form-label" :for="id"> {{ label }}</label>
-        <input :value="modelValue" @input="emit('update:modelValue', $event.target.value)" :id="id" class="form-control"
-            :placeholder="placeholder" :type="type">
+        <small v-if="error" class="text-danger mt-1 mb-0">{{ error }}</small><br />
+        <label class="form-label" :for="id"> {{ label }}
+            <span v-if="required" class="text-danger">*</span>
+        </label>
+        <input :value="modelValue" @input="emit('update:modelValue', $event.target.value)" :id="id" :class="['form-control',
+        {
+            'is-invalid': error
+        }
+            ]" :placeholder="placeholder" :type="type" :disabled="disabled">
     </div>
 
 
@@ -15,8 +20,8 @@
 
 <script setup>
 
-const emit = ([
-    "update:modalValue"
+const emit = defineEmits([
+    "update:modelValue"
 ])
 
 defineProps({
@@ -34,6 +39,14 @@ defineProps({
     error: {
         type: String,
         default: ""
+    },
+    required: {
+        type: Boolean,
+        default: false
+    },
+    disabled: {
+        type: Boolean,
+        default: false
     }
 
 });

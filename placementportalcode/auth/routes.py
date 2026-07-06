@@ -38,12 +38,7 @@ def login():
 
     session["user_id"]=user.id
     print(user.role)
-    # if user.role == RoleEnum.ADMIN.value:
-    #     return redirect(url_for("admin.dashboard"))
-    # if user.role==RoleEnum.COMPANY.value:
-    #     return redirect(url_for("company.dashboard"))
-    # flash(user.role)
-    # return redirect(url_for("student.dashboard"))
+   
     return success_response("Login Successfull",
         {
             "id": user.id,
@@ -57,26 +52,22 @@ def logout():
     session.pop("user_id",None)
     return success_response("Logged out successfully",None,200);
 
-@auth_bp.route("/company-register" ,methods=['GET','POST'])
+@auth_bp.route("/register-company" ,methods=['GET','POST'])
 def register_company():
-    if(request.method=='GET'):
-        return render_template("company/register.html")
-    data=request
-    hr_contact=data.form.get(CompanyEnum.HR_CONTACT.value)
-    company_name = data.form.get(CompanyEnum.COMPANY_NAME.value)
-    password = data.form.get(UserEnum.PASSWORD.value)
-    website = data.form.get(CompanyEnum.COMPANY_WEBSITE.value)
-
-
+   
+    data=request.get_json()
+    hr_contact=data.get(CompanyEnum.HR_CONTACT.value)
+    company_name = data.get(CompanyEnum.COMPANY_NAME.value)
+    password = data.get(UserEnum.PASSWORD.value)
+    website = data.get(CompanyEnum.COMPANY_WEBSITE.value)
     existing_user = User.query.filter_by(username=hr_contact).first()
 
     if existing_user: 
-        flash("Email already registered.", "danger")
-        return redirect(url_for("auth.register_company"))
+        return error_response("Email already registered",None,409)
     
 
     try:
-
+        print("check 1")
         user=User(
             username=hr_contact,
             name=company_name,
@@ -84,11 +75,13 @@ def register_company():
         )
         user.set_password(password)
         
+        print(user.username , user.name)
+        
         db.session.add(user)
         db.session.flush() 
 
         
-        
+        print("check 2")
         company = Company(
                     company_name=company_name,
                     hr_contact=hr_contact,
@@ -100,25 +93,31 @@ def register_company():
 
         db.session.add(company)
         db.session.commit()
-
-        flash("Registration successful. Await admin approval.", "success")
-        return redirect(url_for("auth.login"))
+        print("check 3")
+        return success_response("Organization Registerd Successfully",
+                                  {
+                                        "id": user.id,
+                                        "email":hr_contact ,
+                                        "company_name": company_name,
+                                        "company_website": website, 
+                                        "role": user.role,
+                                        "approval_status":CompanyEnumStatus.PENDING.value
+                                    }
+                                ,201);
     except Exception as e:
         db.session.rollback()
-        flash("Something went wrong. Try again.", "danger")
-        return redirect(url_for("auth.register_company"))
+        print(e)
+        return error_response("Something Went wrong.",None,400)
         
 
 @auth_bp.route("/register", methods=[HTTPMethod.GET,HTTPMethod.POST])
 def signup():
-    if(request.method==HTTPMethod.GET):
-        return render_template("auth/signup.html")
-    data=request
+    data=request.get_json()
 
 
-    username=data.form.get(UserEnum.USERNAME.value)
-    password=data.form.get(UserEnum.PASSWORD.value)
-    name=data.form.get(UserEnum.NAME.value)
+    username=data.get(UserEnum.USERNAME.value)
+    password=data.get(UserEnum.PASSWORD.value)
+    name=data.get(UserEnum.NAME.value)
 
     
     #missing fields check
@@ -127,7 +126,6 @@ def signup():
         
     #duplicate username check
     if User.query.filter_by(username=username).first():
-        flash("Username already exists")
         return error_response("Username already exists",None,409)
        
     user=User(
@@ -141,7 +139,12 @@ def signup():
     save(user)
     commit_session()
 
-    return success_response("Student Registerd Successfully",user ,201);
+    return success_response("Student Registerd Successfully", 
+        {
+            "id": user.id,
+            "username": username,
+            "role": user.role
+        } ,201);
     
     
 @auth_bp.get("/test")

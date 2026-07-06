@@ -1,27 +1,31 @@
 <template>
     <AuthLayout>
-        <form @submit.prevent="handleStudentRegistration">
+        <form @submit.prevent="handleCompanyRegistration">
             <h2 class="text-center mb-2">Placement Portal</h2>
             <p class="text-center text-muted mb-4">
-                Register as Student
+                Register your organization!
             </p>
             <AppAlert :message="errors.register" />
+            <AppInput id="companyName" label="Company Name" v-model="form.companyName" :error="errors.companyName"
+                placeholder="Enter your Company Name" :disabled="isLoading" required />
 
-            <AppInput id="name" label="Name" v-model="form.name" :error="errors.name" placeholder="Enter your name" :disabled="isLoading" required />
-
-            <AppInput id="username" label="Username" v-model="form.username" :error="errors.username"
-                placeholder="Enter your username" :disabled="isLoading" required />
+            <AppInput id="email" label="HR Contact Email " v-model="form.email" :error="errors.email"
+                placeholder="Enter your HR Email" :disabled="isLoading" required />
+            <AppInput id="companyWebsite" label="Company Website" v-model="form.companyWebsite"
+                :error="errors.companyWebsite" placeholder="Enter your Company Website" :disabled="isLoading"
+                required />
             <AppInput id="password" label="Password" v-model="form.password" :error="errors.password"
-                placeholder="Enter your password" type="password" :disabled="isLoading" required/>
+                placeholder="Enter your password" type="password" :disabled="isLoading" required />
             <AppInput id="confirmPassword" label="Confirm Password" v-model="form.confirmPassword"
-                :error="errors.confirmPassword" placeholder="Enter your password again" :disabled="isLoading" required />
+                :error="errors.confirmPassword" placeholder="Enter your password again" :disabled="isLoading"
+                required />
 
 
 
 
 
 
-            <button class="btn btn-primary  d-block mx-auto " :disabled="isLoading"> {{ isLoading ? "Registering Student..." : "Register" }}
+            <button class="btn btn-primary  d-block mx-auto " :disabled="isLoading"> {{ isLoading ? "Registering Organization..." : "Register" }}
             </button>
 
             <div class="text-center mt-3">
@@ -38,9 +42,9 @@
             </div>
             <div class="text-center mt-3">
 
-                Register your organization for drives?
+                Register as Student?
 
-                <RouterLink :to="COMPANY_REGISTER_ROUTE">
+                <RouterLink :to="STUDENT_REGISTER_ROUTE">
 
                     Register
 
@@ -61,7 +65,7 @@
 <script setup>
 
 import { ref, reactive } from "vue"
-import { login, registerStudent } from "../services/authService"
+import { login, registerCompany, registerStudent } from "../services/authService"
 import AuthLayout from "../layout/AuthLayout.vue"
 import api from "../api/axios.js"
 
@@ -69,19 +73,22 @@ import router from "../router/index.js"
 import { getDashboardRoute } from "../utils/navigation.js"
 import { LOGIN_ROUTE } from "../utils/routeConstants"
 import AppInput from "../components/AppInput.vue"
-import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants"
+import { REGISTER_STUDENT_API } from "../utils/urlConstants.js"
+import { STUDENT_REGISTER_ROUTE } from "../utils/routeConstants"
 import AppAlert from "../components/AppAlert.vue"
 
 const form = reactive({
-    name: "",
-    username: "",
+    companyName: "",
+    email: "",
+    companyWebsite: "",
     password: "",
     confirmPassword: ""
 })
 
 const errors = reactive({
-    name: "",
-    username: "",
+    companyName: "",
+    email: "",
+    companyWebsite: "",
     password: "",
     confirmPassword: "",
     register: ""
@@ -100,8 +107,9 @@ function validateEmptyFormField(field) {
 
 function validateForm() {
 
-    errors.name = ""
-    errors.username = ""
+    errors.companyName = ""
+    errors.email = ""
+    errors.companyWebsite = ""
     errors.password = ""
     errors.confirmPassword = ""
     errors.register = ""
@@ -110,8 +118,9 @@ function validateForm() {
     let isValid = true
 
 
-    if (!validateEmptyFormField("name")) isValid = false;
-    if (!validateEmptyFormField("username")) isValid = false;
+    if (!validateEmptyFormField("companyName")) isValid = false;
+    if (!validateEmptyFormField("email")) isValid = false;
+    if (!validateEmptyFormField("companyWebsite")) isValid = false;
     if (!validateEmptyFormField("password")) isValid = false;
     if (!validateEmptyFormField("confirmPassword")) isValid = false;
 
@@ -124,17 +133,18 @@ function validateForm() {
 }
 
 
-function getStudentData() {
+function getCompanyData() {
 
     return {
-        name: form.name.trim(),
-        username: form.username.trim(),
+        company_name: form.companyName.trim(),
+        hr_contact: form.email.trim(),
+        company_website: form.companyWebsite.trim(),
         password: form.password.trim()
     }
 }
 
 
-async function handleStudentRegistration() {
+async function handleCompanyRegistration() {
 
 
     if (!validateForm()) {
@@ -145,7 +155,7 @@ async function handleStudentRegistration() {
     isLoading.value = true
 
     try {
-        const response = await registerStudent(getStudentData())
+        const response = await registerCompany(getCompanyData())
         // console.log(response.data.data);
 
         alert("Registration Successfull")

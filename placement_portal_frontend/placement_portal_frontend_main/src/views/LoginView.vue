@@ -5,25 +5,38 @@
             <p class="text-center text-muted mb-4">
                 Welcome back! Sign in to continue.
             </p>
+            <AppAlert :message="errors.login" />
 
-                <AppInput id="username" label="Username" v-model="form.username" :error="errors.username"
-                    placeholder="Enter your username" />
+            <AppInput id="username" label="Username" v-model="form.username" :error="errors.username"
+                placeholder="Enter your username" :disabled="isLoading" required  />
 
             <AppInput id="password" label="Password" v-model="form.password" :error="errors.password"
-                placeholder="Enter your password" />
+                placeholder="Enter your password" type="password" :disabled="isLoading" required />
 
 
 
 
 
-            <button class="btn btn-primary d-block mx-auto" :disabled="isLoading"> {{ isLoading ? "Logging in..." : "Login" }}
-            </button>
+            <AppButton label="Login" loading-label="Logging In..." :loading="isLoading" />
 
             <div class="text-center mt-3">
 
                 Don't have an account?
 
-                <RouterLink :to =STUDENT_REGISTER_ROUTE>
+                <RouterLink :to="STUDENT_REGISTER_ROUTE">
+
+                    Register
+
+                </RouterLink>
+
+
+            </div>
+
+            <div class="text-center mt-3">
+
+                Register your organization for drives?
+
+                <RouterLink :to="COMPANY_REGISTER_ROUTE">
 
                     Register
 
@@ -44,24 +57,25 @@
 <script setup>
 
 import { ref, reactive } from "vue"
-import { login, logout } from "../services/authService"
+import { login} from "../services/authService"
 import AuthLayout from "../layout/AuthLayout.vue"
-import api from "../api/axios.js"
 import { useAuthStore } from "../stores/AuthStore.js"
 import { getDashboardRoute } from "../utils/navigation.js"
 import AppInput from "../components/AppInput.vue"
 import { useRouter } from "vue-router"
 import { STUDENT_REGISTER_ROUTE } from "../utils/routeConstants"
-import { GET_CURRENT_USER_API, REGISTER_STUDENT_API } from "../utils/urlConstants.js"
+import AppButton from "../components/AppButton.vue"
+import AppAlert from "../components/AppAlert.vue"
+import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants"
 
 
 const form = reactive({
-    email: "",
+    username: "",
     password: ""
 })
 
 const errors = reactive({
-    email: "",
+    username: "",
     password: "",
     login: ""
 })
@@ -73,7 +87,7 @@ const authStore = useAuthStore()
 
 function validateForm() {
 
-    errors.email = ""
+    errors.username = ""
     errors.password = ""
     errors.login = ""
 
@@ -81,8 +95,8 @@ function validateForm() {
     let isValid = true
 
 
-    if (form.email.trim() === "") {
-        errors.email = "Email is required"
+    if (form.username.trim() === "") {
+        errors.username = "Username is required"
         isValid = false
     }
 
@@ -95,10 +109,10 @@ function validateForm() {
 }
 
 
-function buildCredentials() {
+function getCredentials() {
 
     return {
-        username: form.email.trim(),
+        username: form.username.trim(),
         password: form.password.trim()
     }
 }
@@ -108,7 +122,7 @@ async function handleLogin() {
     // logout()
     // const response = await api.get(GET_CURRENT_USER_API)
     // console.log(response.data.data);
-        
+
     if (!validateForm()) {
         return
     }
@@ -117,7 +131,7 @@ async function handleLogin() {
     isLoading.value = true
 
     try {
-        const response = await login(buildCredentials())
+        const response = await login(getCredentials())
         // console.log(response.data.data);
 
         authStore.setAuthenticatedUser(response.data.data);
@@ -128,6 +142,7 @@ async function handleLogin() {
     } catch (error) {
         console.log(error);
         errors.login = error.response?.data?.message || "Something went wrong. Please try again."
+        form.password=""
 
     } finally {
         isLoading.value = false

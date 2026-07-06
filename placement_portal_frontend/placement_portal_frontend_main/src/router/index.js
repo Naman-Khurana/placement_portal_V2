@@ -7,6 +7,7 @@ import { getDashboardRoute } from "../utils/navigation.js";
 import { LOGIN_ROUTE } from "../utils/routeConstants";
 import { STUDENT_REGISTER_ROUTE } from "../utils/routeConstants";
 import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants";
+import CompanyRegisterView from "../views/CompanyRegisterView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -31,7 +32,16 @@ const router = createRouter({
             meta: {
                 requiresAuth: false
             }
+        },
+        {
+            path: "/register-company",
+            name: "Company Register",
+            component: CompanyRegisterView,
+            meta: {
+                requiresAuth: false
+            }
         }
+
         // ,
         //  {
         //     path: "/student",
