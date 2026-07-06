@@ -55,7 +55,7 @@ def login():
 @auth_bp.route("/logout" , methods=[HTTPMethod.GET,HTTPMethod.POST])
 def logout():
     session.pop("user_id",None)
-    return redirect(url_for("auth.login"))
+    return success_response("Logged out successfully",None,200);
 
 @auth_bp.route("/company-register" ,methods=['GET','POST'])
 def register_company():
@@ -109,7 +109,7 @@ def register_company():
         return redirect(url_for("auth.register_company"))
         
 
-@auth_bp.route("/signup", methods=[HTTPMethod.GET,HTTPMethod.POST])
+@auth_bp.route("/register", methods=[HTTPMethod.GET,HTTPMethod.POST])
 def signup():
     if(request.method==HTTPMethod.GET):
         return render_template("auth/signup.html")
@@ -123,13 +123,12 @@ def signup():
     
     #missing fields check
     if not username or not password or not name:
-        flash("missing credentials")
-        return redirect(url_for("auth.signup")) 
-    
+        return error_response("Missing Credentials",None,400)
+        
     #duplicate username check
     if User.query.filter_by(username=username).first():
         flash("Username already exists")
-        return redirect(url_for("auth.signup")) 
+        return error_response("Username already exists",None,409)
        
     user=User(
         username=username,
@@ -142,22 +141,18 @@ def signup():
     save(user)
     commit_session()
 
-    return redirect(url_for("auth.login"))
+    return success_response("Student Registerd Successfully",user ,201);
     
     
 @auth_bp.get("/test")
 def test():
 
     if "user_id" not in session:
-        return jsonify({
-            "success": False,
-            "message": "Not authenticated"
-        }), 401
+        return error_response("Not Authenticated",None, 401); 
+    
 
-    return jsonify({
-        "success": True,
-        "message": "Authenticated",
-        "data": {
+    return success_response("Authenticated",
+        {
             "user_id": session["user_id"]
         }
-    })
+        ,200) 
