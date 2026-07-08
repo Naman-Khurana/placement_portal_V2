@@ -1,5 +1,5 @@
 <template>
-    <button :type="type" :disabled="loading" :class="['btn', `btn-${variant}`, 'w-100']">
+    <button :type="type" :disabled="loading" :class="['btn', `btn-${variant}`, 'w-100']" @click="emit('click')">
         {{ loading ? loadingLabel : label }}
 
     </button>
@@ -28,5 +28,7 @@ const props = defineProps({
         default: "submit"
     }
 })
+
+const emit=  defineEmits(['click'])
 
 </script>

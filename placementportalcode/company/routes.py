@@ -7,8 +7,9 @@ from placementportalcode.extensions import db
 from datetime import datetime,date
 from placementportalcode.enums.approval_status import DriveApprovalStatusEnum
 from sqlalchemy import or_
+from placementportalcode.utils.responses import success_response,error_response
 
-company_bp=Blueprint("company",__name__,url_prefix="/company")
+company_bp=Blueprint("company",__name__,url_prefix="/api/company")
 
 @company_bp.route("/dashboard",methods=[HTTPMethod.GET] )
 def dashboard():
@@ -161,3 +162,36 @@ def edit_profile():
     db.session.commit()
 
     return redirect(url_for("company.dashboard"))
+
+
+@company_bp.route("/<int:company_id>/drives",methods=[HTTPMethod.GET])
+def on_click_company_drives(company_id):
+    company = Company.query.get_or_404(company_id)
+
+    now = datetime.now()
+
+    current_drives = PlacementDrive.query.filter(
+        PlacementDrive.company_id == company_id,
+        PlacementDrive.status == DriveApprovalStatusEnum.APPROVED.value,
+        PlacementDrive.application_deadline >= now
+    ).order_by(
+        PlacementDrive.application_deadline.asc()
+    ).all()
+    data={
+        "company": {
+            "companyId": company.company_id,
+            "companyName": company.company_name,
+            "website": company.company_website
+        },
+        "activeDrives": [
+        {
+            "driveId": drive.drive_id,
+            "title": drive.title,
+            "package": drive.package,
+            "location": drive.location,
+            "deadline": drive.application_deadline.strftime("%d %b %Y")
+        }
+        for drive in current_drives]
+    }
+        
+    return success_response(data=data,message="Company drives fetched successfully", status_code=200)

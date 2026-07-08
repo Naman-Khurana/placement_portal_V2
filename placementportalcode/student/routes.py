@@ -10,23 +10,67 @@ from placementportalcode.extensions import db
 import os
 from flask import current_app
 from werkzeug.utils import secure_filename
+from placementportalcode.utils.responses import success_response,error_response
 
 
-student_bp=Blueprint("student",__name__,url_prefix="/student")
+student_bp=Blueprint("student",__name__,url_prefix="/api/student")
 
 @student_bp.route("/dashboard",methods=[HTTPMethod.GET])
 def dashboard():
     user_id=session.get("user_id")
     if not user_id:
-        return redirect(url_for("auth.login"))
+        return error_response(message="Unauthorized",status_code=401)
     user=User.query.get(user_id)
     
-    if not user or user.role!=RoleEnum.STUDENT.value:
-        return redirect(url_for("auth.login"))
+    # if not user or user.role!=RoleEnum.STUDENT.value:
+    #     return redirect(url_for("auth.login"))
     
     registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)
     student_applications=Application.query.filter(Application.student_id==user.id).all()
-    return render_template("student/dashboard.html",registered_companies=registered_companies,student=user,student_applications=student_applications)
+    
+    stats= {
+        "applications" : len(student_applications),
+        "approvedCompanies": registered_companies.count(),
+        "upcomingDrives": PlacementDrive.query.filter(
+            PlacementDrive.status== DriveApprovalStatusEnum.APPROVED.value,
+            PlacementDrive.application_deadline >=datetime.now()
+        ).count() 
+    }
+    
+    approved_companies =[]
+    
+    for company in registered_companies:
+        approved_companies.append({
+            "id":company.company_id,
+            "companyName":company.company_name,
+            "website": company.company_website
+        })
+        
+    applications = []
+    
+    for application in student_applications:
+        applications.append({
+            "applicationId": application.application_id,
+            "status": application.status,
+            "applicationDate" : application.application_date.isoformat(),
+            "driveTitle" : application.drive.drive_name,
+            "companyName" : application.drive.company.company_name
+        })
+
+    
+    return success_response(
+        message="Student Dashboard fetched successfully",
+        data= {
+            "student": {
+                "id":user.id,
+                "name":user.name,
+                "department":user.department,
+                "resumeUploaded": bool(user.resume_path)
+            },
+            "stats" : stats,
+            "approvedCompanies" : approved_companies,
+            "recentApplications": applications
+        },status_code=200)
     
 
 @student_bp.route('/<int:student_id>/<int:company_id>/drives',methods=[HTTPMethod.GET])
@@ -123,3 +167,5 @@ def edit_profile():
     db.session.commit()
     
     return redirect(url_for("student.dashboard"))
+
+

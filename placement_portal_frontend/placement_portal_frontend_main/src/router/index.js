@@ -8,6 +8,7 @@ import { LOGIN_ROUTE } from "../utils/routeConstants";
 import { STUDENT_REGISTER_ROUTE } from "../utils/routeConstants";
 import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants";
 import CompanyRegisterView from "../views/CompanyRegisterView.vue";
+import StudentDashboardView from "../views/StudentDashboardView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -40,17 +41,15 @@ const router = createRouter({
             meta: {
                 requiresAuth: false
             }
+        },
+         {
+            path: "/student",
+            name: "Student Dashboard",
+            component: StudentDashboardView,
+            meta: {
+                requiresAuth: true
+            }
         }
-
-        // ,
-        //  {
-        //     path: "/student",
-        //     name: "Student Dashboard",
-        //     component: StudentDashBoardView,
-        //     meta: {
-        //         requiresAuth: true
-        //     }
-        // }
     ]
 });
 
