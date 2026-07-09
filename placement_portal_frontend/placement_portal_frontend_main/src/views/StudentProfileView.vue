@@ -3,10 +3,10 @@
 
         <div class="container py-4">
             <div v-if="!loading">
-                <PageHeader title="Student Dashboard" :subtitle="`Welcome back, ${dashboard.student.name}`">
+                <PageHeader title="Edit Profile" :subtitle="`Welcome back, ${dashboard.student.name}`">
                     <template #actions>
 
-                        <AppButton label="Edit Profile" @click="editProfile"/>
+                         <!-- <AppButton label="Edit Profile" @click="editProfile"/> -->
 
                     </template>
                 </PageHeader>

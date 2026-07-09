@@ -9,17 +9,20 @@ import { STUDENT_REGISTER_ROUTE } from "../utils/routeConstants";
 import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants";
 import CompanyRegisterView from "../views/CompanyRegisterView.vue";
 import StudentDashboardView from "../views/StudentDashboardView.vue";
+import { STUDENT_PROFILE_ROUTE } from "../utils/routeConstants";
+import { STUDENT_DASHBOARD_ROUTE } from "../utils/routeConstants";
+import StudentProfileView from "../views/StudentProfileView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
             path: "/",
-            redirect: "/login",
+            redirect: LOGIN_ROUTE,
 
         },
         {
-            path: "/login",
+            path: LOGIN_ROUTE,
             name: "Login",
             component: LoginView,
             meta: {
@@ -27,7 +30,7 @@ const router = createRouter({
             }
         },
         {
-            path: "/register",
+            path: STUDENT_REGISTER_ROUTE,
             name: "Student Register",
             component: StudentRegisterView,
             meta: {
@@ -35,7 +38,7 @@ const router = createRouter({
             }
         },
         {
-            path: "/register-company",
+            path: COMPANY_REGISTER_ROUTE,
             name: "Company Register",
             component: CompanyRegisterView,
             meta: {
@@ -43,12 +46,21 @@ const router = createRouter({
             }
         },
          {
-            path: "/student",
+            path: STUDENT_DASHBOARD_ROUTE,
             name: "Student Dashboard",
             component: StudentDashboardView,
             meta: {
                 requiresAuth: true
             }
+        },
+        {
+            path:STUDENT_PROFILE_ROUTE,
+            name: "Student Profile Page",
+            component: StudentProfileView,
+            meta: {
+                requiresAuth: true
+            }
+
         }
     ]
 });
