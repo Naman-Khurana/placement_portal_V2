@@ -1,28 +1,70 @@
 <template>
-    <DashboardLayout :sidebarItems="sidebarItems" title="">
+    <DashboardLayout :sidebarItems="studentSidebarItems" title="">
 
         <div class="container py-4">
             <div v-if="!loading">
-                <PageHeader title="Edit Profile" :subtitle="`Welcome back, ${dashboard.student.name}`">
-                    <template #actions>
+                <PageHeader title="Edit Profile" subtitle="Keep your profile updated">
+                    <!-- <template #actions> -->
 
-                         <!-- <AppButton label="Edit Profile" @click="editProfile"/> -->
+                    <!-- <AppButton label="Edit Profile" @click="editProfile"/> -->
 
-                    </template>
+                    <!-- </template> -->
                 </PageHeader>
 
-                <StatsCard title="Applications" :value="dashboard.stats.applications" subtitle="Applications Submitted"
-                    icon="bi bi-file-earmark-text" variant="primary" />
 
-                <DashboardSection title="Approved Companies" subtitle="Companies Currently Hiring">
-                    <DataTable :columns="companyColumns" :rows="dashboard.approvedCompanies">
-                        <template #cell-actions="{ row }">
-                            <AppButton label="View Drives" @click="viewCompanyDrives(row.id)">
-                            </AppButton>
 
-                        </template>
-                    </DataTable>
+                <DashboardSection title="Personal Information">
+                    <AppInput label="Name" v-model="profile.name" />
+
+                    <AppInput label="Username" v-model="profile.username" disabled />
+
+                    <AppInput label="Department" v-model="profile.department" />
+
+                    <AppInput type="date" label="Date of Birth" v-model="profile.dob" />
+
+
+                    <AppButton label="Save Changes" loadingLabel="Saving Changes..." :loading="saving"
+                        @click="updateProfile" />
+
                 </DashboardSection>
+
+                <DashboardSection title="Resume">
+                    <div class="mb-3">
+                        <div v-if="profile.resumePath">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">
+                                        Current Resume
+                                    </div>
+
+                                    <small class="text-muted">
+                                        {{ resumeFileName }}
+                                    </small>
+
+                                </div>
+                                <a :href="resumeUrl" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    View Resume
+                                </a>
+                            </div>
+                        </div>
+
+                        <div v-else>
+                            <p class="text-muted mb-0">
+                                No resume uploaded yet.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div v-if="resumeUploading" class="text-primary">
+                        Uploading resume...
+                    </div>
+                    <div v-else>
+                        <AppFileINput label="Replace Resume" accept=".pdf" @selected="uploadResume" />
+                    </div>
+
+                </DashboardSection>
+
 
             </div>
             <div v-else>
@@ -34,141 +76,103 @@
     </DashboardLayout>
 
 
-    <AppModal v-model="showCompanyModal" :title="selectedCompany?.companyName">
-
-        <div v-if="modalLoading">Loading...</div>
-        <div v-else>
-            <DataTable v-if="companyDrives.length" :columns="companyColumns" :rows="companyDrives">
-
-            
-            
-                
-            </DataTable>
-            <div v-else>
-                No Active Placement Drives
-            </div>
-        </div>
-
-    </AppModal>
 
 </template>
 
 
-<script setup >
+<script setup>
 import DashboardLayout from '../layout/DashboardLayout.vue';
 import PageHeader from '../components/PageHeader.vue';
-import AppButton from '../components/AppButton.vue';
-import StatsCard from '../components/StatsCard.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import DashboardSection from '../components/DashboardSection.vue';
-import DataTable from '../components/DataTable.vue';
-import { getStudentDashboard } from '../services/StudentService.js';
-import { GET_COMPANY_ACTIVE_DRIVES } from '../utils/urlConstants.js';
-import { getCompaniesActiveDrives } from '../services/CompanyService.js';
-import AppModal from '../components/AppModal.vue';
-import { STUDENT_DASHBOARD_ROUTE, STUDENT_APPLICATIONS_ROUTE, STUDENT_PROFILE_ROUTE } from '../utils/routeConstants';
-import { RouterLink } from 'vue-router';
-import { useRouter } from "vue-router"
-
-const router = useRouter()
+import { getStudentProfile, updateStudentProfile, uploadStudentResume } from '../services/StudentService.js';
+import { studentSidebarItems } from '../utils/StudentsUtils.js';
+import AppInput from '../components/AppInput.vue';
+import AppButton from '../components/AppButton.vue';
+import { computed } from "vue";
+import AppFileINput from '../components/AppFileINput.vue';
 
 const loading = ref(false);
+const saving = ref(false);
+const resumeUploading = ref(false);
 const error = ref("");
 
-const selectedCompany = ref(null);
-const companyDrives = ref([]);
-const showCompanyModal = ref(false);
-const modalLoading = ref(false);
 
 
 
-const dashboard = ref({
-    student: {
-        department: null,
-        id: null,
-        name: "",
-        resumeUploaded: false
-    },
-    stats: {
-        applications: 0,
-        approvedCompanies: 0,
-        upcomingDrives: 0
-    },
-    approvedCompanies: [],
-    recentApplications: []
+const profile = reactive({
+    name: "",
+    username: "",
+    department: "",
+    dob: "",
+    resumePath: ""
 });
 
-const companyColumns = [
-    {
-        key: "companyName",
-        label: "Company"
-    },
-    {
-        key: "website",
-        label: "Website"
-    },
-    {
-        key: "actions",
-        label: "Action"
-    }
-];
 
 
-const sidebarItems = [
+const resumeUrl = computed(() => {
+    if (!profile.resumePath) return "";
+    return `http://localhost:5000/${profile.resumePath}`;
+});
 
-    {
-        label: "Dashboard",
-        route: STUDENT_DASHBOARD_ROUTE
-    },
 
-    {
-        label: "My Applications",
-        route: STUDENT_APPLICATIONS_ROUTE
-    },
 
-    {
-        label: "Profile",
-        route: STUDENT_PROFILE_ROUTE
+const resumeFileName = computed(() => {
+
+    if (!profile.resumePath) {
+        return "";
     }
 
-];
+    return profile.resumePath.split("/").pop();
+
+});
 
 
 
 
+async function uploadResume(file) {
+    if (!file) {
+        return;
+    }
+    resumeUploading.value = true;
+
+    const formData = new FormData()
+    formData.append("resume", file)
 
 
-
-function editProfile(){
-    router.push(STUDENT_PROFILE_ROUTE);
-}
-async function viewCompanyDrives(companyId) {
-    modalLoading.value = true;
     try {
-        const response = await getCompaniesActiveDrives(companyId);
-        const data = response.data.data;
-        console.log(data)
-        selectedCompany.value = data.company;
-        companyDrives.value = data.activeDrives;
-        showCompanyModal.value = true;
-
-
+        const response = await uploadStudentResume(formData)
+        profile.resumePath = response.data.data.resumePath
+        console.log(profile.resumePath)
     } catch (err) {
-        console.log(err);
-    }
-    finally {
-        modalLoading.value = false;
+        console.log(err)
+    } finally {
+        resumeUploading.value = false;
     }
 }
 
 
+async function updateProfile() {
+    saving.value = true;
+    try {
+        const response = await updateStudentProfile(profile)
+        Object.assign(profile,response.data.data)
+    } catch (err) {
+        error.value = err.response?.data?.message || "Something went wrong"
+        console.log(err)
+    } finally {
+        saving.value = false
+    }
+}
 
-async function loadDashboard() {
+
+async function loadProfile() {
     loading.value = true;
     try {
-        const response = await getStudentDashboard();
+        const response = await getStudentProfile();
+        console.log(response.data.data)
+        Object.assign(profile, response.data.data)
 
-        dashboard.value = response.data.data;
     } catch (err) {
         console.log(err)
         error.value = err.response?.data?.message || "Failed to load dashboard.";
@@ -179,6 +183,6 @@ async function loadDashboard() {
 }
 
 
-onMounted(() => loadDashboard())
+onMounted(() => loadProfile())
 
 </script>

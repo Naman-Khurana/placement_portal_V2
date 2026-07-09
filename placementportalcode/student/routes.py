@@ -140,32 +140,124 @@ def withdraw_application():
     return redirect(request.referrer)    
 
 
-@student_bp.route('/edit-profile',methods=[HTTPMethod.POST])
+@student_bp.route('/profile',methods=[HTTPMethod.PUT,HTTPMethod.GET])
 def edit_profile():
+    
+    
+    
     user_id = session.get("user_id")
-    student = User.query.get_or_404(user_id)
+    if not user_id:
+        return error_response(message="Unauthorized" , status_code=401)
+    student = User.query.get(user_id)
 
-    student.name = request.form.get("name")
-    student.department = request.form.get("department")
+    if not student:
+        return error_response("Student not found" , status_code=404)
 
-    dob = request.form.get("dob")
-    if dob:
-        student.dob = datetime.strptime(dob, "%Y-%m-%d").date()
+    if(request.method==HTTPMethod.GET):
+        return success_response(
+        
+        
+            data={
+                "name": student.name,
+                "username": student.username,
+                "department": student.department,
+                "dob": student.dob.isoformat() if student.dob else None,
+                "resumePath": student.resume_path
+            },status_code=200
+        )
 
+    
+
+    data = request.get_json()
+    
+    if not data:
+        return error_response(
+            message="Invalid request body",
+            status_code=400
+        )
+
+    name = data.get("name")
+    if not name or not name.strip():
+        return error_response("Name cannot be emppty", status_code=400)
+    student.name =name.strip()
+    
+    
+    try: 
+    
+        department = data.get("department")
+
+        if department :
+            student.department= department.strip()
+        
+        dob = data.get("dob")
+        if dob:
+            student.dob = datetime.strptime(dob, "%Y-%m-%d").date()
+
+        db.session.commit()
+        
+        return success_response(
+            message="Profile Updated Successfully",
+            data={
+                "name": student.name,
+                "username": student.username,
+                "department": student.department,
+                "dob": student.dob.isoformat() if student.dob else None
+            },
+            status_code=200
+        )
+    except Exception as e:
+        db.session.rollback()
+        return error_response(
+            message="Something went wrong.",
+            status_code=500
+        )
+
+@student_bp.route('/profile/resume',methods=[HTTPMethod.POST])
+def update_resume():
+    
+    user_id = session.get("user_id")
+    if not user_id:
+        return error_response(message="Unauthorized" , status_code=401)
+    student = User.query.get(user_id)
+
+    if not student:
+        return error_response("Student not found" , status_code=404)
+    
+    
     file = request.files.get("resume")
+    if not file or file.filename == "":
+        return error_response(
+            message="Resume file is required",
+            status_code=400
+        )
 
-    if file and file.filename != "":
+    try:
+        
+        
         filename = secure_filename(file.filename)
 
         filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
 
+        if student.resume_path:
+            old_path = os.path.join(current_app.root_path, student.resume_path)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
         student.resume_path = f"uploads/resumes/{filename}"
-
-
-        student.resume_path = f"uploads/resumes/{filename}"
-    db.session.commit()
-    
-    return redirect(url_for("student.dashboard"))
-
+        
+        db.session.commit()
+        return success_response(
+            message="Resume uploaded successfully",
+            data={
+                "resumePath": student.resume_path
+            },
+            status_code=201
+        )
+    except Exception:
+        db.session.rollback()
+        return error_response(
+            message="Failed to upload resume",
+            status_code=500
+        )
 

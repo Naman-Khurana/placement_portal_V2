@@ -11,6 +11,8 @@ export const REGISTER_COMPANY_API= AUTH_PREFIX + "/register-company"
 // student apis
 export const STUDENT_PREFIX="/api/student"
 export const STUDENT_DASHBOARD_API= STUDENT_PREFIX + "/dashboard"
+export const STUDENT_PROFILE_API=STUDENT_PREFIX + "/profile"
+export const STUDENT_RESUME_UPLOAD_API= STUDENT_PREFIX + "/profile/resume"
 
 
 //company api"

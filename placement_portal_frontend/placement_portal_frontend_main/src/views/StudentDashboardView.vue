@@ -1,5 +1,5 @@
 <template>
-    <DashboardLayout :sidebarItems="sidebarItems" title="">
+    <DashboardLayout :sidebarItems="studentSidebarItems" title="">
 
         <div class="container py-4">
             <div v-if="!loading">
@@ -69,6 +69,7 @@ import AppModal from '../components/AppModal.vue';
 import { STUDENT_DASHBOARD_ROUTE, STUDENT_APPLICATIONS_ROUTE, STUDENT_PROFILE_ROUTE } from '../utils/routeConstants';
 import { RouterLink } from 'vue-router';
 import { useRouter } from "vue-router"
+import { studentSidebarItems } from '../utils/StudentsUtils.js';
 
 const router = useRouter()
 
@@ -114,24 +115,6 @@ const companyColumns = [
 ];
 
 
-const sidebarItems = [
-
-    {
-        label: "Dashboard",
-        route: STUDENT_DASHBOARD_ROUTE
-    },
-
-    {
-        label: "My Applications",
-        route: STUDENT_APPLICATIONS_ROUTE
-    },
-
-    {
-        label: "Profile",
-        route: STUDENT_PROFILE_ROUTE
-    }
-
-];
 
 
 

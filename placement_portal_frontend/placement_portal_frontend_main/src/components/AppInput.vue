@@ -2,7 +2,7 @@
 
     <div class="mb-3">
 
-        <small v-if="error" class="text-danger mt-1 mb-0">{{ error }}</small><br />
+        <small v-if="error" class="text-danger   mb-0">{{ error }}</small><br />
         <label class="form-label" :for="id"> {{ label }}
             <span v-if="required" class="text-danger">*</span>
         </label>
