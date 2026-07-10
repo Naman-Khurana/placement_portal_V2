@@ -1,14 +1,18 @@
 import { ROLES } from "../enums/Roles";
+import { ADMIN_ROUTE_PREFIX } from "./routeConstants";
+import { STUDENT_DASHBOARD_ROUTE } from "./routeConstants";
+import { LOGIN_ROUTE } from "./routeConstants";
+import { COMPANY_DASHBOARD_ROUTE } from "./routeConstants";
 
 export function getDashboardRoute(role){
     switch(role){
         case ROLES.ADMIN:
-            return "/admin";
+            return ADMIN_ROUTE_PREFIX;
         case ROLES.COMPANY:
-            return "/company";
+            return COMPANY_DASHBOARD_ROUTE;
         case ROLES.STUDENT:
-            return "/student"
+            return STUDENT_DASHBOARD_ROUTE
         default:
-            return "/login"
+            return LOGIN_ROUTE
     }
 }

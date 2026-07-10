@@ -41,7 +41,7 @@
 
                 <template #cell-actions="{ row }">
 
-                    <AppButton  label="Withdraw" loadingLabel="Withdrawing..."
+                    <AppButton v-if="row.status.toUpperCase()!== 'REJECTED'"  label="Withdraw" loadingLabel="Withdrawing..."
                         @click="withdrawApplication(row.driveId)" />
 
 

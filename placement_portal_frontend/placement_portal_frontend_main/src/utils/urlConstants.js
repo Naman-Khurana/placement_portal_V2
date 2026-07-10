@@ -19,3 +19,4 @@ export const STUDENT_APPLICATION_WITHDRAW_API=(driveId)=> STUDENT_PREFIX + `/dri
 //company api"
 export const COMPANY_PREFIX= "/api/company"
 export const GET_COMPANY_ACTIVE_DRIVES= (companyId) =>COMPANY_PREFIX +`/${companyId}/drives`
+export const COMPANY_DASHBOARD_API= COMPANY_PREFIX + "/dashboard"

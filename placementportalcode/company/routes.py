@@ -8,6 +8,7 @@ from datetime import datetime,date
 from placementportalcode.enums.approval_status import DriveApprovalStatusEnum
 from sqlalchemy import or_
 from placementportalcode.utils.responses import success_response,error_response
+from placementportalcode.enums.application_status import ApplicationStatusEnum 
 
 company_bp=Blueprint("company",__name__,url_prefix="/api/company")
 
@@ -15,34 +16,80 @@ company_bp=Blueprint("company",__name__,url_prefix="/api/company")
 def dashboard():
     user_id=session.get("user_id")
     if not user_id:
-        return redirect(url_for("auth.login"))
+        
+        return error_response( message ="user not found", status_code=404) 
     user=User.query.get(user_id)
     if not user or user.role!=RoleEnum.COMPANY  .value:
-        return redirect(url_for("auth.login"))
-    
-    
+        return error_response(message="user not found", status_code=404)
     
 
     current_company=user.company
+    if not current_company:
+        return error_response(message='company not found' , status_code=404)
+
     now=datetime.now()
 
 
     upcoming_drives=PlacementDrive.query.filter(
         PlacementDrive.company_id==current_company.company_id,
         PlacementDrive.application_deadline >=now,
-        PlacementDrive.status!=DriveApprovalStatusEnum.CLOSED.value
-    ).order_by(PlacementDrive.application_deadline.asc()).all()\
+        PlacementDrive.status == DriveApprovalStatusEnum.APPROVED.value
+    ).order_by(PlacementDrive.application_deadline.asc()).all()
+        
+    drivesList=[]
+    for drive in upcoming_drives:
+        
+        
+        application_count = Application.query.filter_by(drive_id=drive.drive_id).count()
+
+        drivesList.append({
+            "driveId": drive.drive_id,
+            "title": drive.drive_name,
+            "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
+            "applicationCount": application_count,
+
+            "status": drive.status
+        })
     
     closed_drives=PlacementDrive.query.filter(
         PlacementDrive.company_id==current_company.company_id,
         or_(
             PlacementDrive.application_deadline < now,
             PlacementDrive.status==DriveApprovalStatusEnum.CLOSED.value
-        )
-       
-    ).order_by(PlacementDrive.application_deadline.asc()).all()
+        )).count()
+        
+    total_applications=Application.query.join(
+        PlacementDrive, Application.drive_id == PlacementDrive.drive_id
+    ).filter(
+        PlacementDrive.company_id == current_company.company_id
+    ).count()
+    
+    hired_students = Application.query.join(
+        PlacementDrive,
+        Application.drive_id == PlacementDrive.drive_id
+    ).filter(
+        PlacementDrive.company_id == current_company.company_id,
+        Application.status == ApplicationStatusEnum.HIRED.value
+    ).count()
+        
+      
 
-    return render_template("company/dashboard.html",upcoming_drives=upcoming_drives, closed_drives=closed_drives,current_company=current_company)
+    return success_response(
+        message="Dashboard fetched successfully",
+        data={
+            "company": {
+                "companyName": current_company.company_name,
+                "approval_status": current_company.approval_status     
+            },
+            "stats":{
+                "upcomingDrives" : len(upcoming_drives),
+                "closedDrives": closed_drives,
+                "totalApplications": total_applications,
+                "hiredStudents" : hired_students
+            },
+            "upcomingDrives": drivesList
+        }
+    )
 
 @company_bp.route("/create-drive",methods=[HTTPMethod.POST])
 def create_drive():
