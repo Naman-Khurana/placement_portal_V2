@@ -12,6 +12,8 @@ import StudentDashboardView from "../views/StudentDashboardView.vue";
 import { STUDENT_PROFILE_ROUTE } from "../utils/routeConstants";
 import { STUDENT_DASHBOARD_ROUTE } from "../utils/routeConstants";
 import StudentProfileView from "../views/StudentProfileView.vue";
+import { STUDENT_APPLICATIONS_ROUTE } from "../utils/routeConstants";
+import StudentApplicationsView from "../views/StudentApplicationsView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -52,6 +54,15 @@ const router = createRouter({
             meta: {
                 requiresAuth: true
             }
+        },
+        {
+            path:STUDENT_APPLICATIONS_ROUTE,
+            name: "Student Applications Page",
+            component: StudentApplicationsView,
+            meta: {
+                requiresAuth: true
+            }
+
         },
         {
             path:STUDENT_PROFILE_ROUTE,

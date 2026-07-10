@@ -90,54 +90,134 @@ def company_drives(student_id,company_id):
     shortlistedOrHired_application_ids={app.drive_id for app in shortlistedOrHired_applications}
     return render_template('student/company-details.html',company=company,current_drives=current_drives,student=student,applied_drive_ids=applied_drive_ids,rejected_application_ids=rejected_application_ids,shortlistedOrHired_application_ids=shortlistedOrHired_application_ids)
 
-@student_bp.route('/<int:student_id>/<int:drive_id>/application', methods=[HTTPMethod.POST])
-def apply_drive(student_id,drive_id):
+@student_bp.route('/drives/<int:drive_id>/applications', methods=[HTTPMethod.POST])
+def apply_drive(drive_id):
+    
+    user_id=session.get("user_id")
+    
+    
+    
+    if not user_id:
+        return error_response( message="Unauthorized",status_code=401)
    
-    student_id = request.form.get("student_id")
-    drive_id = request.form.get("drive_id")
-    company_id=request.form.get('company_id')
-
-    drive = PlacementDrive.query.get_or_404(drive_id)
-    student = User.query.get_or_404(student_id)
-    company=Company.query.get_or_404(company_id)
+   
+    student = User.query.get(user_id)
     
-    checkApplication=Application.query.filter(Application.student_id==student_id , Application.drive_id==drive_id).first()
-    if checkApplication:
-        return redirect(url_for('student.dashboard'))
+    if not student:
+        return error_response(message="Student not found")
     
-    application=Application(
-        application_date=date.today(),
-        status=ApplicationStatusEnum.APPLIED.value,
-        student_id=student_id,
-        drive_id=drive_id
-    )
+    
+  
+    
+    drive = PlacementDrive.query.get(drive_id)
+    if not drive:
+        return error_response(message="Placement Drive not found",status_code=404)
+    
+    
+    existingApplication=Application.query.filter(Application.student_id==user_id , Application.drive_id==drive_id).first()
+    if existingApplication:
+        return error_response(message="Already Applied" ,status_code=409)
+    try:
+        application=Application(
+            application_date=date.today(),
+            status=ApplicationStatusEnum.APPLIED.value,
+            student_id=user_id,
+            drive_id=drive_id
+        )
 
-    db.session.add(application)
-    db.session.commit()
+        db.session.add(application)
+        db.session.commit()
+        return success_response(message="Applied Successfully", status_code=201)
 
-    if not company :
-        return redirect(url_for('student.dashboard'))
-    return redirect(url_for('student.company_drives', company_id=company.company_id,student_id=student_id))
+    
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e) , status_code=500) 
+@student_bp.route("/drives/<drive_id>/applications", methods=[HTTPMethod.DELETE])
+def withdraw_application(drive_id):
 
-@student_bp.route("/withdraw_application", methods=[HTTPMethod.POST])
-def withdraw_application():
+    user_id=session.get("user_id")
+    
+    if not user_id:
+        return error_response( message="Unauthorized",status_code=401)
+   
+    student = User.query.get(user_id)
+    
+    if not student:
+        return error_response(message="Student not found",status_code=404)
 
-    student_id = session.get("user_id")
-    drive_id = request.form.get("drive_id")
-
-    if not student_id or not drive_id:
-        return redirect(url_for("student.dashboard"))
-
+    # drive = PlacementDrive.query.get(drive_id)
+    
+    # if not drive:
+    #     return error_response(message="Placement Drive not found",status_code=404)
+    
+    
     application = Application.query.filter(
-        Application.student_id == student_id,
+        Application.student_id == user_id,
         Application.drive_id == drive_id
     ).first()
-
-    if application:
+    if not application:
+        return error_response(message="Application not found", status_code=404 )
+    
+    try:
         db.session.delete(application)
         db.session.commit()
+        
+        return success_response(message="Application withdrawn successfully",status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500 )
 
-    return redirect(request.referrer)    
+@student_bp.route("/applications", methods=[HTTPMethod.GET] )
+def my_applications():
+    user_id=session.get("user_id")
+    
+    if not user_id:
+        return error_response( message="Unauthorized",status_code=401)
+   
+    student = User.query.get(user_id)
+    
+    if not student:
+        return error_response(message="Student not found",status_code=404)
+    
+    applications = Application.query.filter_by(
+        student_id= user_id
+    ).all()
+    
+    stats={
+        ApplicationStatusEnum.APPLIED.value: 0,
+        ApplicationStatusEnum.SHORTLISTED.value: 0,
+        ApplicationStatusEnum.SELECTED.value: 0,
+        ApplicationStatusEnum.REJECTED.value: 0,
+        ApplicationStatusEnum.WAITLISTED.value: 0,
+        ApplicationStatusEnum.HIRED.value: 0,
+    }
+    application_list=[]
+    
+    for application in applications:
+        if application.status:
+            stats[application.status]+=1
+
+
+        application_list.append({
+            "applicationId": application.application_id,
+            "status": application.status,
+            "applicationDate": application.application_date.isoformat(),
+            "driveId": application.drive.drive_id,
+            "driveName": application.drive.drive_name,
+            "companyId": application.drive.company.company_id,
+            "companyName": application.drive.company.company_name,
+            "deadline": application.drive.application_deadline.isoformat(),
+        })
+        
+    return success_response(
+        message="Applications fetched successfully",
+        data= {
+            "stats" : stats,
+            "applications":application_list
+        },
+        status_code=200
+    )       
 
 
 @student_bp.route('/profile',methods=[HTTPMethod.PUT,HTTPMethod.GET])

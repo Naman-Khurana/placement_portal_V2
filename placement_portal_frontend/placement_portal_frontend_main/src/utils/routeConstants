@@ -6,5 +6,5 @@ export const COMPANY_REGISTER_ROUTE= "/register-company"
 //student routes
 export const STUDENT_ROUTE_PREFIX="/student"
 export const STUDENT_DASHBOARD_ROUTE=STUDENT_ROUTE_PREFIX
-export const STUDENT_APPLICATIONS_ROUTE= STUDENT_ROUTE_PREFIX + "/dashboard"
+export const STUDENT_APPLICATIONS_ROUTE= STUDENT_ROUTE_PREFIX + "/applications"
 export const STUDENT_PROFILE_ROUTE=STUDENT_ROUTE_PREFIX + "/profile"
