@@ -159,7 +159,8 @@ def get_drives():
             "jobTitle": drive.job_title,
             "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
             "company": drive.company.company_name,
-            "status": drive.status
+            "status": drive.status,
+            "ctc" : drive.ctc
         }
         
         if drive.status==DriveApprovalStatusEnum.PENDING.value:

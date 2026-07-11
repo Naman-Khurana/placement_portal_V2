@@ -2,7 +2,7 @@
     <DashboardLayout :sidebarItems="adminSidebarItems">
         <PageHeader title="Manage Application">
             <template #actions>
-                <AppInput v-model="search" placeholder="Search by Drive Name..." @input="searchApplications"
+                <AppInput v-model="search" placeholder="Search by Drive, Company, Student ..." @input="searchApplications"
                     style="width:300px" />
             </template>
         </PageHeader>
