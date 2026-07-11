@@ -20,3 +20,7 @@ export const COMPANY_PROFILE_ROUTE=COMPANY_ROUTE_PREFIX + "/profile"
 //admin routes
 export const ADMIN_ROUTE_PREFIX="/admin"
 export const ADMIN_DASHBOARD_ROUTE=ADMIN_ROUTE_PREFIX
+export const ADMIN_STUDENTS_ROUTE=ADMIN_ROUTE_PREFIX + "/students"
+export const ADMIN_COMPANIES_ROUTE=ADMIN_ROUTE_PREFIX + "/companies"
+export const ADMIN_DRIVES_ROUTE=ADMIN_ROUTE_PREFIX + "/drives"
+export const ADMIN_APPLICATIONS_ROUTE=ADMIN_ROUTE_PREFIX + "/applications"

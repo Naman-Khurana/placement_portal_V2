@@ -51,10 +51,11 @@ def dashboard():
     pendingApprovalDrives=[]
     
     for drive in pending_approval_drives:
-        pending_approval_drives.append({
+        pendingApprovalDrives.append({
             "driveId":drive.drive_id,
             "driveName":drive.drive_name,
             "jobTitle":drive.job_title, 
+            "ctc":drive.ctc,
             # "job_desc":drive.company_name,
             # "eligibility_criteria":drive.company_website,
             "applicationDeadline":drive.application_deadline.strftime("%d %b %Y"),

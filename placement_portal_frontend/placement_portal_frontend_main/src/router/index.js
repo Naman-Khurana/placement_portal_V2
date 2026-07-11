@@ -22,6 +22,14 @@ import { COMPANY_PROFILE_ROUTE } from "../utils/routeConstants";
 import CompanyProfileView from "../views/company/CompanyProfileView.vue";
 import { ADMIN_DASHBOARD_ROUTE } from "../utils/routeConstants";
 import AdminDashboardView from "../views/admin/AdminDashboardView.vue";
+import { ADMIN_STUDENTS_ROUTE } from "../utils/routeConstants";
+import { ADMIN_COMPANIES_ROUTE } from "../utils/routeConstants";
+import { ADMIN_DRIVES_ROUTE } from "../utils/routeConstants";
+import { ADMIN_APPLICATIONS_ROUTE } from "../utils/routeConstants";
+import AdminStudentsDashboardView from "../views/admin/AdminStudentsDashboardView.vue";
+import AdminCompaniesDashboardView from "../views/admin/AdminCompaniesDashboardView.vue";
+import AdminDrivesDashboardView from "../views/admin/AdminDrivesDashboardView.vue";
+import AdminApplicationsDashboardView from "../views/admin/AdminApplicationsDashboardView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -119,6 +127,43 @@ const router = createRouter({
             }
 
         },
+        {
+            path:ADMIN_STUDENTS_ROUTE,
+            name: "Admin Students Dashboard",
+            component: AdminStudentsDashboardView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        {
+            path:ADMIN_COMPANIES_ROUTE,
+            name: "Admin Companies Dashboard",
+            component: AdminCompaniesDashboardView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        {
+            path:ADMIN_DRIVES_ROUTE,
+            name: "Admin Drives Dashboard",
+            component: AdminDrivesDashboardView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        {
+            path:ADMIN_APPLICATIONS_ROUTE,
+            name: "Admin Applications Dashboard",
+            component: AdminApplicationsDashboardView,
+            meta: {
+                requiresAuth: true
+            }
+
+        }
+
 
     ]
 });
