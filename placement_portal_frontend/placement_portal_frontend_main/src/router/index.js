@@ -20,6 +20,8 @@ import { COMPANY_PLACEMENT_DRIVES_ROUTE } from "../utils/routeConstants";
 import CompanyPlacementDrivesView from "../views/company/CompanyPlacementDrivesView.vue";
 import { COMPANY_PROFILE_ROUTE } from "../utils/routeConstants";
 import CompanyProfileView from "../views/company/CompanyProfileView.vue";
+import { ADMIN_DASHBOARD_ROUTE } from "../utils/routeConstants";
+import AdminDashboardView from "../views/admin/AdminDashboardView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -79,6 +81,7 @@ const router = createRouter({
             }
 
         },
+        //company
          {
             path:COMPANY_DASHBOARD_ROUTE,
             name: "Company Dashboard",
@@ -101,6 +104,16 @@ const router = createRouter({
             path:COMPANY_PROFILE_ROUTE,
             name: "Company Profile",
             component: CompanyProfileView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        // admin
+        {
+            path:ADMIN_DASHBOARD_ROUTE,
+            name: "Admin Dashboard",
+            component: AdminDashboardView,
             meta: {
                 requiresAuth: true
             }

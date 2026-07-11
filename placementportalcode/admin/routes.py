@@ -9,38 +9,269 @@ from placementportalcode.enums.application_status import ApplicationStatusEnum
 from placementportalcode.extensions import db
 from datetime import datetime
 from sqlalchemy import or_
-admin_bp=Blueprint("admin",__name__,url_prefix="/admin")
+from placementportalcode.utils.responses import success_response,error_response
+
+
+admin_bp=Blueprint("admin",__name__,url_prefix="/api/admin")
 
 @admin_bp.route("/dashboard",methods=[HTTPMethod.GET] )
 def dashboard():
-    user_id=session.get("user_id")
-    if not user_id:
-        return redirect(url_for("auth.login"))
-    user=User.query.get(user_id)
-    if not user:
-        return redirect(url_for("auth.login"))
-    if user.role!=RoleEnum.ADMIN.value:
-        return redirect(url_for("auth.login"))
+    if not checkAdmin():
+        return error_response(message="Unauthorized",status_code=403)
    
     now=datetime.now()
-    company_applications=Company.query.filter_by(approval_status=CompanyEnumStatus.PENDING.value)
-    registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)
-    blacklisted_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.BLACKLISTED.value)
-    registered_students=User.query.filter_by(role=RoleEnum.STUDENT.value )
-    requested_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.PENDING.value)
-    rejected_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.REJECT.value)
+    total_company_count=  Company.query.count()
+    
+    pending_approval_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.PENDING.value).all()
+    # registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)    
+    # blacklisted_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.BLACKLISTED.value)
+    
+    total_student_count= User.query.filter_by( role=RoleEnum.STUDENT.value).count()
+    # registered_students=User.query.filter_by(role=RoleEnum.STUDENT.value )
 
-    ongoing_drives=PlacementDrive.query.filter(PlacementDrive.status=='approved',PlacementDrive.status==DriveApprovalStatusEnum.APPROVED.value)
-    student_applications=Application.query.all()
+    total_drive_count=PlacementDrive.query.count()
+    pending_approval_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.PENDING.value).all()
+    # rejected_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.REJECT.value)
+    # ongoing_drives=PlacementDrive.query.filter(PlacementDrive.status=='approved',PlacementDrive.status==DriveApprovalStatusEnum.APPROVED.value)
+    
+    total_application_count= Application.query.count()
+    # student_applications=Application.query.all()
+    
+    pendingApprovalCompanies=[]
+    
+    for company in pending_approval_companies:
+        pendingApprovalCompanies.append({
+            "companyId":company.company_id, 
+            "companyName":company.company_name,
+            "website":company.company_website,
+            "hrContact":company.hr_contact,
+            "status":company.approval_status
+        })
+        
+    pendingApprovalDrives=[]
+    
+    for drive in pending_approval_drives:
+        pending_approval_drives.append({
+            "driveId":drive.drive_id,
+            "driveName":drive.drive_name,
+            "jobTitle":drive.job_title, 
+            # "job_desc":drive.company_name,
+            # "eligibility_criteria":drive.company_website,
+            "applicationDeadline":drive.application_deadline.strftime("%d %b %Y"),
+            "status":drive.status
+        })
 
    
-    return render_template("admin/dashboard.html",company_applications=company_applications,registered_companies=registered_companies,registered_students=registered_students,ongoing_drives=ongoing_drives,requested_drives=requested_drives,student_applications=student_applications,blacklisted_companies=blacklisted_companies,rejected_drives=rejected_drives)
+    return success_response(
+        message="admin dashboard fetched successfully",
+        data= {
+            "stats":{
+                "companies":total_company_count,
+                "students":total_student_count,
+                "drives":total_drive_count,
+                "applications": total_application_count
+            },
+            "pendingDrives":pendingApprovalDrives,
+            "pendingCompanies":pendingApprovalCompanies
+        },
+        status_code=200
+        )
+    
 
     
-@admin_bp.route("/company/<int:company_id>/update_status",methods=[HTTPMethod.POST])
+@admin_bp.route("/companies",methods= [HTTPMethod.GET])
+def get_companies():
+    
+    if not checkAdmin():
+        return error_response(message="Unauthorized",status_code=403)
+   
+    
+    query = Company.query
+    
+    search=request.args.get("search")
+    
+    if(search):
+        query=query.filter(
+            Company.company_name.ilike(f"%{search}%")
+        )
+    companies=query.all()
+    
+    pendingCompanies = []
+    approvedCompanies = []
+    blacklistedCompanies = []
+    
+    for company in companies:
+        companyData = {
+            "companyId": company.company_id,
+            "companyName": company.company_name,
+            "companyWebsite": company.company_website,
+            "hrContact": company.hr_contact,
+            "approvalStatus": company.approval_status
+        }
+        
+        if company.approval_status==CompanyEnumStatus.PENDING.value:
+            pendingCompanies.append(companyData)
+        elif company.approval_status==CompanyEnumStatus.APPROVED.value:
+            approvedCompanies.append(companyData)
+        elif company.approval_status==CompanyEnumStatus.BLACKLISTED.value:
+            blacklistedCompanies.append(companyData)
+        
+    return success_response(
+        message="all companies data fetched",
+        data ={
+            "pendingCompanies":pendingCompanies,
+            "approvedCompanies":approvedCompanies,
+            "blacklistedCompanies":blacklistedCompanies
+        },status_code=200
+    )
+
+
+    
+@admin_bp.route("/drives",methods= [HTTPMethod.GET])
+def get_drives():
+    
+    if not checkAdmin():
+        return error_response(message="Unauthorized",status_code=403)
+   
+    
+    query = PlacementDrive.query
+    
+    search=request.args.get("search")
+    
+    if(search):
+        query=query.filter(
+            PlacementDrive.drive_name.ilike(f"%{search}%")
+        )
+    drives=query.all()
+    
+    pendingDrives = []
+    approvedDrives = []
+    closedDrives = []
+    rejectedDrives = []
+    
+    now = datetime.now()
+    
+    for drive in drives:
+        driveData = {
+            "driveId": drive.drive_id,
+            "driveName": drive.drive_name,
+            "jobTitle": drive.job_title,
+            "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
+            "company": drive.company.company_name,
+            "status": drive.status
+        }
+        
+        if drive.status==DriveApprovalStatusEnum.PENDING.value:
+            pendingDrives.append(driveData)
+        elif drive.status==DriveApprovalStatusEnum.APPROVED.value and drive.application_deadline >= now:
+            approvedDrives.append(driveData)
+        elif drive.status==DriveApprovalStatusEnum.REJECT.value:
+            rejectedDrives.append(driveData)
+        else:
+            closedDrives.append(driveData)
+        
+    return success_response(
+        message="all drives data fetched",
+        data ={
+            "pendingDrives":pendingDrives,
+            "approvedDrives":approvedDrives,
+            "rejectedDrives":rejectedDrives,
+            "closedDrives":closedDrives
+        },
+        status_code=200
+    )
+
+@admin_bp.route("/students",methods= [HTTPMethod.GET])
+def get_students():
+    
+    if not checkAdmin():
+        return error_response(message="Unauthorized",status_code=403)
+   
+    
+    query = User.query.filter(
+        User.role== RoleEnum.STUDENT.value
+    )
+    search=request.args.get("search")
+    
+    if(search):
+        query=query.filter(
+            User.name.ilike(f"%{search}%")
+        )
+    students=query.all()
+    studentsData=[];
+    for student in students:
+        studentData = {
+            "studentId" : student.id,
+            "name": student.name,
+            "eligible": student.eligible
+        }
+        studentsData.append(studentData)
+        
+        
+        
+    return success_response(
+        message="all students data fetched",
+        data ={
+            "students":studentsData
+        },
+        status_code=200
+    )
+
+
+
+@admin_bp.route("/applications",methods= [HTTPMethod.GET])
+def get_applications():
+    
+    if not checkAdmin():
+        return error_response(message="Unauthorized",status_code=403)
+   
+    query=Application.query
+    query = (
+    Application.query
+        .join(Application.student)
+        .join(Application.drive)
+        .join(PlacementDrive.company)
+    )
+    search = request.args.get("search")
+    if search:
+        query = query.filter(
+            or_(
+                User.name.ilike(f"%{search}%"),
+                PlacementDrive.drive_name.ilike(f"%{search}%"),
+                Company.company_name.ilike(f"%{search}%")
+            )
+        ).distinct()
+    applications=query.all()
+    applicationsData=[]
+    for application in applications:
+        applicationData = {
+            "companyName" : application.drive.company.company_name,
+            "studentName": application.student.name,
+            "status": application.status,
+            "applicationDate":application.application_date.strftime("%d %b %Y"),
+            "driveName":application.drive.drive_name
+        }
+        applicationsData.append(applicationData)
+        
+        
+        
+    return success_response(
+        message="all applications data fetched",
+        data ={
+            "applications":applicationsData
+        },
+        status_code=200
+    )
+
+    
+@admin_bp.route("/companies/<int:company_id>/status",methods=[HTTPMethod.PATCH])
 def update_company_status(company_id):
-    company=Company.query.get_or_404(company_id)
-    action=request.form.get('action')
+    
+    company=Company.query.get(company_id)
+    if not company:
+        return error_response( message="company not found",status_code=404)
+    data =request.get_json()
+    action=data.get('action')
     
     if(action=='approve'):
         company.approval_status=CompanyEnumStatus.APPROVED.value
@@ -48,16 +279,21 @@ def update_company_status(company_id):
     elif action=='blacklist':
         company.approval_status=CompanyEnumStatus.BLACKLISTED.value
     else:
-        abort(400)
+        return error_response(message="Bad Request", status_code=400)
+    try:
+        db.session.commit()
+        return success_response(message="company status updated successfully",status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)
 
-    db.session.commit()
-    return redirect(url_for("admin.dashboard"))
-
-
-@admin_bp.route("/drive/<int:drive_id>/update_status",methods=[HTTPMethod.POST])
+@admin_bp.route("/drives/<int:drive_id>/status",methods=[HTTPMethod.PATCH])
 def update_drive_status(drive_id):
-    drive=PlacementDrive.query.get_or_404(drive_id)
-    action=request.form.get('action')
+    drive=PlacementDrive.query.get(drive_id)
+    if not drive:
+        return error_response(message="drive not found", status_code=404)
+    data =request.get_json()
+    action=data.get('action')
     
     if(action=='approve'):
         drive.status=DriveApprovalStatusEnum.APPROVED.value
@@ -67,15 +303,22 @@ def update_drive_status(drive_id):
     elif action=='close':
         drive.status=DriveApprovalStatusEnum.CLOSED.value
     else:
-        abort(400)
+        return error_response(message="Bad Request", status_code=400)
 
-    db.session.commit()
-    return redirect(url_for("admin.dashboard"))
+    try:
+        db.session.commit()
+        return success_response(message="drive status updated successfully",status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)
 
-@admin_bp.route("/student/<int:student_id>/update_status",methods=[HTTPMethod.POST])
+@admin_bp.route("/students/<int:student_id>/status",methods=[HTTPMethod.PATCH])
 def update_student_status(student_id):
-    student=User.query.get_or_404(student_id)
-    action=request.form.get('action')
+    student=User.query.get(student_id)
+    if not student:
+        return error_response(message="student not found", status_code=404)
+    data =request.get_json()
+    action=data.get('action')
     
     if(action=='whitelist'):
         student.eligible=True
@@ -83,16 +326,23 @@ def update_student_status(student_id):
     elif action=='blacklist':
         student.eligible=False
     else:
-        abort(400)
+        return error_response(message="Bad Request", status_code=400)
 
-    db.session.commit()
-    return redirect(url_for("admin.dashboard"))
+    try:
+        db.session.commit()
+        return success_response(message="student status updated successfully",status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)
 
 
-@admin_bp.route("/application/update_status",methods=[HTTPMethod.POST])
-def update_application_status():
-    application=Application.query.get_or_404('application_id')
-    action=request.form.get('action')
+@admin_bp.route("/applications/<int:application_id>/status",methods=[HTTPMethod.PATCH])
+def update_application_status(application_id):
+    application=Application.query.get(application_id)
+    if not application:
+        return error_response(message="application not found", status_code=404)
+    data = request.get_json()
+    action=data.get('action')
     
     
     if(action=='shortlisted'):
@@ -106,38 +356,25 @@ def update_application_status():
     elif action=='waitlisted':
         application.status=ApplicationStatusEnum.WAITLISTED.value
     else:
-        abort(400)
+        return error_response(message="Bad Request", status_code=400)
 
-    db.session.commit()
-    return redirect(url_for("admin.dashboard"))
+    try:
+        db.session.commit()
+        return success_response(message="application status updated successfully",status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)
 
 
-@admin_bp.route("/search", methods=["GET"])
-def search():
+    
 
-    query = request.args.get("query", "").strip()
-
-    students = []
-    companies = []
-
-    if query:
-        students = User.query.filter(
-            User.role == RoleEnum.STUDENT.value,
-            or_(
-                User.name.ilike(f"%{query}%"),
-                User.username.ilike(f"%{query}%")
-            )
-        ).all()
-
-        companies = Company.query.filter(
-            Company.company_name.ilike(f"%{query}%")
-        ).all()
-
-    return render_template(
-        "admin/search_results.html",
-        query=query,
-        search_students=students,
-        search_companies=companies
-    )
+def checkAdmin():
+    user_id=session.get("user_id")
+    if not user_id:
+        return False
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.ADMIN.value:
+        return False
+    return True
     
     
