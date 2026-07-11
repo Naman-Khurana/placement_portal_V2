@@ -297,32 +297,66 @@ def update_drive(id):
             return error_response(message=str(e),status_code=500)
 
     
-@company_bp.route("/edit-profile", methods=["POST"])
+@company_bp.route("/profile", methods=[HTTPMethod.GET,HTTPMethod.PUT])
 def edit_profile():
 
-    company_id=request.form.get('company_id')
-    if not company_id:
-        return redirect(url_for("company.dashboard"))
-    
-    company=Company.query.get_or_404(company_id)
+    user_id=session.get("user_id")
+    if not user_id:
+        
+        return error_response( message ="user not found", status_code=404) 
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.COMPANY  .value:
+        return error_response(message="user not found", status_code=404)
     
 
-    hr_contact = request.form.get("hr_contact")
-    company_website = request.form.get("company_website")
-    company_name = request.form.get("company_name")
+    company=user.company
+    if not company:
+        return error_response(message='company not found' , status_code=404)
+    
+    if request.method==HTTPMethod.GET:
+        return success_response(
+            message="company profile fetched successfully",
+            data={
+                "companyId":company.company_id,
+                "companyName" : company.company_name,
+                "companyWebsite":company.company_website,
+                "hrContact":company.hr_contact,
+                "approvalStatus":company.approval_status   
+            },status_code=200
+        )
+    
+    
+    data = request.get_json()
 
-    if hr_contact:
-        company.hr_contact=hr_contact
+    # hr_contact = data.get("hr_contact")
+    company_website = data.get("company_website")
+    company_name = data.get("company_name")
+
+    # if hr_contact:
+    #     company.hr_contact=hr_contact
     if company_website:
         company.company_website=company_website
     if company_name:
         company.company_name=company_name
    
+    try:
+        db.session.commit()
+        return success_response(
+            message="company profile updated successfully",
+            data={
+                "companyId":company.company_id,
+                "companyName" : company.company_name,
+                "companyWebsite":company.company_website,
+                "hrContact":company.hr_contact,
+                "approvalStatus":company.approval_status  
+            },
+            status_code=200)
+    except Exception as e:
+        db.session.rollback();
+        return error_response(message=str(e),status_code=500)
+    
 
-    db.session.commit()
-
-    return redirect(url_for("company.dashboard"))
-
+    
 
 @company_bp.route("/<int:company_id>/drives",methods=[HTTPMethod.GET])
 def on_click_company_drives(company_id):

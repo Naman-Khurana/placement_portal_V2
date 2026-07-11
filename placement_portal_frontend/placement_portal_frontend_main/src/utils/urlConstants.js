@@ -22,3 +22,4 @@ export const GET_COMPANY_ACTIVE_DRIVES= (companyId) =>COMPANY_PREFIX +`/${compan
 export const COMPANY_DASHBOARD_API= COMPANY_PREFIX + "/dashboard"
 export const COMPANY_DRIVES_API= COMPANY_PREFIX + "/drives"
 export const COMPANY_DRIVES_EDIT_API=(driveId)=> COMPANY_PREFIX + `/drives/${driveId}`
+export const COMPANY_PROFILE_API= COMPANY_PREFIX + "/profile"

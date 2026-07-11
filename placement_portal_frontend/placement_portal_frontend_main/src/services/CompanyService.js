@@ -1,5 +1,5 @@
 import api from "../api/axios";
-import { COMPANY_DASHBOARD_API, COMPANY_DRIVES_API, COMPANY_DRIVES_EDIT_API, GET_COMPANY_ACTIVE_DRIVES } from "../utils/urlConstants";
+import { COMPANY_DASHBOARD_API, COMPANY_DRIVES_API, COMPANY_DRIVES_EDIT_API, COMPANY_PROFILE_API, GET_COMPANY_ACTIVE_DRIVES } from "../utils/urlConstants";
 
 export async function getCompaniesActiveDrives(companyId){
     return await api.get(GET_COMPANY_ACTIVE_DRIVES(companyId));
@@ -23,3 +23,14 @@ export async function editCompanyDrive(driveId,updateDrive) {
 export async function updateCompanyDriveStatus(driveId,status) {
     return await api.patch(COMPANY_DRIVES_EDIT_API(driveId),status);
 }
+
+export async function getCompanyProfile() {
+    return await api.get(COMPANY_PROFILE_API);
+}
+
+export async function updateCompanyProfile(data) {
+    return await api.put(COMPANY_PROFILE_API,data);
+}
+
+
+
