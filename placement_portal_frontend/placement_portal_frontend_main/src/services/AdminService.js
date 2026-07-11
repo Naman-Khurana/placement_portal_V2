@@ -6,17 +6,33 @@ export async function getAdminDashboard() {
     return await api.get(ADMIN_DASHBOARD_API);
 }
 
-export async function getAdminStudentDashboard() {
-    return await api.get(ADMIN_STUDENTS_API);
+export async function getAdminStudentDashboard(search="") {
+    return await api.get(ADMIN_STUDENTS_API, {
+        params: {
+            search
+        }
+    });
 }
-export async function getAdminCompanyDashboard() {
-    return await api.get(ADMIN_COMPANIES_API);
+export async function getAdminCompanyDashboard(search="") {
+    return await api.get(ADMIN_COMPANIES_API,{
+        params: {
+            search
+        }
+    });
 }
-export async function getAdminDriveDashboard() {
-    return await api.get(ADMIN_DRIVES_API);
+export async function getAdminDriveDashboard(search="") {
+    return await api.get(ADMIN_DRIVES_API,{
+        params:{
+            search
+        }
+    });
 }
-export async function getAdminApplicationDashboard() {
-    return await api.get(ADMIN_APPLICATIONS_API);
+export async function getAdminApplicationDashboard(search="") {
+    return await api.get(ADMIN_APPLICATIONS_API,{
+        params:{
+            search
+        }
+    });
 }
 
 export async function updateStudentStatusService(id,data){

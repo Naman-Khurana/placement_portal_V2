@@ -246,6 +246,7 @@ def get_applications():
     applicationsData=[]
     for application in applications:
         applicationData = {
+            "applicationId":application.application_id,
             "companyName" : application.drive.company.company_name,
             "studentName": application.student.name,
             "status": application.status,
@@ -345,7 +346,7 @@ def update_application_status(application_id):
     data = request.get_json()
     action=data.get('action')
     
-    
+    action=action.lower()
     if(action=='shortlisted'):
         application.status=ApplicationStatusEnum.SHORTLISTED.value
     elif action=='rejected':
