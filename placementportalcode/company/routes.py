@@ -5,7 +5,7 @@ from placementportalcode.enums.modelsenum import PlacementDriveEnum,UserEnum,Com
 from http import HTTPMethod
 from placementportalcode.extensions import db
 from datetime import datetime,date
-from placementportalcode.enums.approval_status import DriveApprovalStatusEnum
+from placementportalcode.enums.approval_status import DriveApprovalStatusEnum,CompanyEnumStatus
 from sqlalchemy import or_
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.enums.application_status import ApplicationStatusEnum 
@@ -90,49 +90,118 @@ def dashboard():
             "upcomingDrives": drivesList
         }
     )
+    
+    
+@company_bp.route("/drives",methods=[HTTPMethod.GET,HTTPMethod.POST])
+def drives():
+    user_id=session.get("user_id")
+    if not user_id:
+        
+        return error_response( message ="user not found", status_code=404) 
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.COMPANY  .value:
+        return error_response(message="user not found", status_code=404)
+    
 
-@company_bp.route("/create-drive",methods=[HTTPMethod.POST])
-def create_drive():
+    current_company=user.company
+    if not current_company:
+        return error_response(message='company not found' , status_code=404)
+    
+    if(request.method==HTTPMethod.GET):
+    
+        now=datetime.now()
 
-    drive_name=request.form.get(PlacementDriveEnum.DRIVE_NAME.value)
-    job_title=request.form.get(PlacementDriveEnum.JOB_TITLE.value)
-    job_desc=request.form.get(PlacementDriveEnum.JOB_DESC.value)
-    eligibility_criteria=request.form.get(PlacementDriveEnum.ELIGIBILITY_CRITERIA.value)
-    deadline_raw = request.form.get(PlacementDriveEnum.APPLICATION_DEADLINE.value)
-    ctc=request.form.get(PlacementDriveEnum.CTC.value)
+
+        all_drives=PlacementDrive.query.filter(
+            PlacementDrive.company_id==current_company.company_id,
+        ).all()
+        
+        upcoming_drives=[]
+        closed_drives=[]
+        pending_approval_drives=[]
+        rejected_drives=[]
+        now =datetime.now()
+            
+        # drivesList=[]
+        for drive in all_drives:
+            drivesList=None
+            
+            if(drive.status== DriveApprovalStatusEnum.PENDING.value):
+                drivesList=pending_approval_drives
+            elif(drive.status== DriveApprovalStatusEnum.REJECT.value):
+                drivesList=rejected_drives
+            elif(drive.status== DriveApprovalStatusEnum.APPROVED.value and drive.application_deadline>=now):
+                drivesList=upcoming_drives
+            else:
+                drivesList=closed_drives
+            application_count = Application.query.filter_by(drive_id=drive.drive_id).count()
+
+            drivesList.append({
+                "driveId": drive.drive_id,
+                "driveName": drive.drive_name,
+                "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
+                "applicationCount":application_count,
+                "jobTitle":drive.job_title,
+                "eligibilityCriteria":drive.eligibility_criteria,
+                "ctc":drive.ctc,
+                "status": drive.status
+            })
+
+        
+
+        return success_response(
+            message="Company drives fetched successfully",
+            data={
+                "upcomingDrives":upcoming_drives,
+                "pendingApprovalDrives":pending_approval_drives,
+                "rejectedDrives":rejected_drives,
+                "closedDrives":closed_drives
+            }
+        )
+    
+    data=request.get_json()
+    drive_name=data.get(PlacementDriveEnum.DRIVE_NAME.value)
+    job_title=data.get(PlacementDriveEnum.JOB_TITLE.value)
+    job_desc=data.get(PlacementDriveEnum.JOB_DESC.value)
+    eligibility_criteria=data.get(PlacementDriveEnum.ELIGIBILITY_CRITERIA.value)
+    deadline_raw = data.get(PlacementDriveEnum.APPLICATION_DEADLINE.value)
+    ctc=data.get(PlacementDriveEnum.CTC.value)
     application_deadline = datetime.strptime(
         deadline_raw, "%Y-%m-%dT%H:%M"
     )
-    user_id=session.get("user_id")
-    if not user_id:
-        return redirect(url_for("auth.login"))
-    
-    user= User.query.get(user_id)
+  
+    try:
+        new_drive=PlacementDrive(
+            drive_name=drive_name,
+            company_id=current_company.company_id,
+            job_title=job_title,
+            job_desc=job_desc,
+            status=DriveApprovalStatusEnum.PENDING.value,
+            eligibility_criteria=eligibility_criteria,
+            application_deadline=application_deadline,
+            ctc=ctc
 
-    if not user or user.role!=RoleEnum.COMPANY.value:
-        return redirect(url_for("auth.login"))
-    
-    company=user.company
-    if not company:
-        return redirect(url_for("auth.login"))
-    
-    company_id=company.company_id
+        )
 
-    new_drive=PlacementDrive(
-        drive_name=drive_name,
-        company_id=company_id,
-        job_title=job_title,
-        job_desc=job_desc,
-        eligibility_criteria=eligibility_criteria,
-        application_deadline=application_deadline,
-        ctc=ctc
+        db.session.add(new_drive)
+        db.session.commit()
 
-    )
-
-    db.session.add(new_drive)
-    db.session.commit()
-
-    return redirect(url_for("company.dashboard"))
+        return success_response(
+            message="Drive created successfully.",
+            data={
+                "driveName":new_drive.drive_name,
+                "companyId":new_drive.company_id,
+                "jobTitle":new_drive.job_title,
+                "jobDescription":new_drive.job_desc,
+                "status":new_drive.status,
+                "eligibilityCriteria":new_drive.eligibility_criteria,
+                "applicationDeadline":new_drive.application_deadline,
+                "ctc":new_drive.ctc
+            },status_code=201
+        )
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e), status_code=500)
     
 
 @company_bp.route("/update-applicant-status", methods=[HTTPMethod.POST])
@@ -161,29 +230,73 @@ def close_drive():
 
     return redirect(request.referrer)
 
+    
 
-@company_bp.route("/update-drive/<int:id>", methods=["POST"])
+@company_bp.route("/drives/<int:id>", methods=[HTTPMethod.PUT,HTTPMethod.PATCH])
 def update_drive(id):
+    if(request.method==HTTPMethod.PATCH):
+            
+        user_id=session.get("user_id")
+        if not user_id:
+            
+            return error_response( message ="user not found", status_code=404) 
+        user=User.query.get(user_id)
+        if not user or user.role!=RoleEnum.COMPANY  .value:
+            return error_response(message="user not found", status_code=404)
+        
 
-    drive = PlacementDrive.query.get_or_404(id)
+        current_company=user.company
+        if not current_company:
+            return error_response(message='company not found' , status_code=404)
+        drive = PlacementDrive.query.get(id)
+        data =request.get_json()
+        new_status= data.get("status")
+        if not drive:
+            return error_response(message="Drive not found",status_code=404)
+        
+        if drive.company_id != current_company.company_id:
+            return error_response(
+                message="Unauthorized",
+                status_code=403
+            )
+        
+        if (drive.status!= DriveApprovalStatusEnum.APPROVED.value and drive.status!= DriveApprovalStatusEnum.CLOSED.value) or (new_status!= DriveApprovalStatusEnum.APPROVED.value and new_status!= DriveApprovalStatusEnum.CLOSED.value ):
+            return error_response(message="Unauthorized",status_code=403)
+        try:
+            
+            drive.status= new_status
+            db.session.commit()
+        
+            return success_response(message="drive status updated",status_code=200)
+        except Exception as e:
+            db.session.rollback()
+            return error_response(message=str(e),status_code=500)
+    
+    
+    if(request.method==HTTPMethod.PUT):
+        drive = PlacementDrive.query.get(id)
+        if not drive:
+            return error_response(message="Drive not found",status_code=404)
+        data = request.get_json()
+        deadline = data.get("application_deadline")
+        ctc = data.get("ctc")
 
-    deadline = request.form.get("application_deadline")
-    ctc = request.form.get("ctc")
-    status = request.form.get("status")
 
-    if deadline:
-        drive.application_deadline = datetime.strptime(deadline, "%Y-%m-%d").date()
+        if deadline:
+            drive.application_deadline = datetime.strptime(deadline,"%Y-%m-%dT%H:%M").date()
 
-    if ctc:
-        drive.ctc = ctc
+        if ctc:
+            drive.ctc = ctc
 
-    if status:
-        drive.status = status
+    
+        try:
+            db.session.commit()
+            return success_response(message="drive updated successfully", status_code=200)
+        except Exception as e:
+            db.session.rollback()
+            return error_response(message=str(e),status_code=500)
 
-    db.session.commit()
-
-    return redirect(url_for("company.dashboard"))
-
+    
 @company_bp.route("/edit-profile", methods=["POST"])
 def edit_profile():
 

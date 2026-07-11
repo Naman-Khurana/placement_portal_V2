@@ -16,6 +16,10 @@ import { STUDENT_APPLICATIONS_ROUTE } from "../utils/routeConstants";
 import StudentApplicationsView from "../views/StudentApplicationsView.vue";
 import { COMPANY_DASHBOARD_ROUTE } from "../utils/routeConstants";
 import CompanyDashboardView from "../views/company/CompanyDashboardView.vue";
+import { COMPANY_PLACEMENT_DRIVES_ROUTE } from "../utils/routeConstants";
+import CompanyPlacementDrivesView from "../views/company/CompanyPlacementDrivesView.vue";
+import { COMPANY_PROFILE_ROUTE } from "../utils/routeConstants";
+import CompanyProfileView from "../views/company/CompanyProfileView.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -77,8 +81,26 @@ const router = createRouter({
         },
          {
             path:COMPANY_DASHBOARD_ROUTE,
-            name: "Student Dashboard",
+            name: "Company Dashboard",
             component: CompanyDashboardView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        {
+            path:COMPANY_PLACEMENT_DRIVES_ROUTE,
+            name: "Company drives",
+            component: CompanyPlacementDrivesView,
+            meta: {
+                requiresAuth: true
+            }
+
+        },
+        {
+            path:COMPANY_PROFILE_ROUTE,
+            name: "Company Profile",
+            component: CompanyProfileView,
             meta: {
                 requiresAuth: true
             }
