@@ -11,6 +11,7 @@ import os
 from flask import current_app
 from werkzeug.utils import secure_filename
 from placementportalcode.utils.responses import success_response,error_response
+from placementportalcode.tasks.export import export_student_applications
 
 
 student_bp=Blueprint("student",__name__,url_prefix="/api/student")
@@ -341,3 +342,15 @@ def update_resume():
             status_code=500
         )
 
+@student_bp.route("/export",methods=[HTTPMethod.POST])
+def export():
+    user_id=session.get("user_id")
+    if not user_id:
+        return error_response(message="Unauthorized", status_code=403)
+    
+    export_student_applications.delay(user_id)
+    
+    return success_response(
+        message="Your Export has started. You will receive it by email shortly.",
+        status_code=202
+    )

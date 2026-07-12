@@ -1,11 +1,12 @@
 from flask import Flask,render_template,redirect,url_for
-from .extensions import db
+from .extensions import db, cache, mail
 from placementportalcode.auth.routes import auth_bp
 from placementportalcode.admin.routes import admin_bp
 from placementportalcode.company.routes import company_bp
 from placementportalcode.student.routes import student_bp
 from .config import Config
 from flask_migrate import Migrate
+from .celery_utils import init_celery
 import os
 
 def create_app():
@@ -23,11 +24,17 @@ def create_app():
 
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    
     db.init_app(app)
-
+    cache.init_app(app)
+    mail.init_app(app)
+   
+    
     migrate = Migrate(app, db)
 
     from .models import User,Company,Application,PlacementDrive
+    
+    init_celery(app)
 
     return app
     # @app.route("/")

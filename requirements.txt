@@ -3,3 +3,7 @@ Flask-SQLAlchemy
 Flask-Login
 Werkzeug
 Flask-Cors
+redis
+celery
+flask-caching
+Flask-Mail
