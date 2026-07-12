@@ -14,9 +14,9 @@ def init_celery(app):
     celery.conf.beat_schedule= {
         "daily_remainder": {
             "task": "daily_reminder",
-            # "schedule": timedelta(seconds=30),
+            "schedule": timedelta(seconds=30),
 
-            "schedule": crontab(hour=9,minute=0)
+            # "schedule": crontab(hour=9,minute=0)
         },
         "monthly-report": {
             "task": "monthly_report",

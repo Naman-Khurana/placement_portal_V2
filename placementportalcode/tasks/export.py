@@ -5,22 +5,15 @@ from placementportalcode.models import User,Application
 from datetime import datetime
 from flask_mail import Message
 from placementportalcode.extensions import mail
-
+from placementportalcode.utils.email import send_email
 @celery.task(name="export_student_applications")
 def export_student_applications(student_id):
     
-    print("=" * 50)
-    print("EXPORT STARTED")
-    print("=" * 50)
-
-
     student=User.query.get(student_id)
     if not student:
         return
     
     applications=Application.query.filter_by(student_id=student_id).all()    
-
-    print(f"Found {len(applications)} applications.")
     
     export_folder = os.path.join(
         os.getcwd(),
@@ -37,9 +30,7 @@ def export_student_applications(student_id):
         export_folder,
         f"student_{student_id}_{timestamp}.csv"
     )
-    
-    print("something happpend")
-    print(file_path)
+
     
     with open(file_path, "w", newline="", encoding="utf-8") as csv_file:
 
@@ -65,13 +56,8 @@ def export_student_applications(student_id):
                 application.status,
                 application.application_date.strftime("%d-%m-%Y")
             ])
-        
-    msg = Message(
-        subject="Placement Application Export",
-        recipients=[student.username]  
-    )
-    
-    msg.body = """
+            
+    body = """
         Hello,
 
         Your placement application history has been exported successfully.
@@ -80,17 +66,12 @@ def export_student_applications(student_id):
 
         Regards,
         Placement Portal
-        """
-
-    with open(file_path, "rb") as f:
-        msg.attach(
-            filename=os.path.basename(file_path),
-            content_type="text/csv",
-            data=f.read()
-        )
+        """        
+            
+    
 
     try:
-        mail.send(msg)
+        send_email(subject="Placement Application Export",recipients=[student.username],body=body,attachment_path=file_path)
         print("Email sent successfully.")
         
         os.remove(file_path)
