@@ -133,7 +133,10 @@ def get_company_drives(user_id):
             "upcomingDrives":upcoming_drives,
             "pendingApprovalDrives":pending_approval_drives,
             "rejectedDrives":rejected_drives,
-            "closedDrives":closed_drives
+            "closedDrives":closed_drives,
+            "company":{
+                "approvalStatus":current_company.approval_status
+            }
         }
     
 @cache.memoize(timeout=300)

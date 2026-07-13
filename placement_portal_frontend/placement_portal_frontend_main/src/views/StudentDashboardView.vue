@@ -6,8 +6,7 @@
                 <PageHeader title="Student Dashboard" :subtitle="`Welcome back, ${dashboard.student.name}`">
                     <template #actions>
 
-                        <AppButton label="Edit Profile" @click="editProfile"/>
-
+                        <AppButton label="Edit Profile" @click="editProfile" />
                     </template>
                 </PageHeader>
 
@@ -99,7 +98,8 @@ const dashboard = ref({
         applications: 0,
         approvedCompanies: 0,
         upcomingDrives: 0
-    },
+    }
+    ,
     approvedCompanies: [],
     recentApplications: []
 });

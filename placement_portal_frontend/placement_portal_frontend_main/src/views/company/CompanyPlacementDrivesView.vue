@@ -4,7 +4,24 @@
         <div v-if="!loading">
             <PageHeader title="Placement Drives" subtitle="Manage all your placement drives">
                 <template #actions>
-                    <AppButton label="Create Drive +" @click="showCreateDriveModal = true" />
+                    <AppButton
+                        label="Create Drive +"
+                        @click="showCreateDriveModal = true"
+                        :disabled="drives.company.approvalStatus !== 'approved'"
+                    />
+
+                    <div
+                        v-if="drives.company.approvalStatus !== 'approved'"
+                        class="alert alert-warning mt-2 mb-0"
+                    >
+                        <span v-if="drives.company.approvalStatus === 'pending'">
+                            Your company is pending approval. Please contact the administrator for more information.
+                        </span>
+
+                        <span v-else-if="drives.company.approvalStatus === 'blacklisted'">
+                            Your company has been blacklisted. Please contact the administrator for more information.
+                        </span>
+                    </div>
                 </template>
 
                 <template #cell-status="{ row }">
@@ -115,7 +132,10 @@ const drives = ref({
     upcomingDrives: [],
     pendingApprovalDrives: [],
     rejectedDrives: [],
-    closedDrives: []
+    closedDrives: [],
+    company :{
+        approvalStatus:""
+    }
 });
 
 const driveColumns = [

@@ -46,7 +46,8 @@ def drives():
     if not current_company:
         return error_response(message='company not found' , status_code=404)
     
-    
+    if current_company.approval_status!= CompanyEnumStatus.APPROVED.value:
+        return error_response(message="Forbidden", status_code=403)
     
     data=request.get_json()
     drive_name=data.get(PlacementDriveEnum.DRIVE_NAME.value)
