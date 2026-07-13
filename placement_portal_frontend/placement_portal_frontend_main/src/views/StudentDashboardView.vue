@@ -38,12 +38,17 @@
 
         <div v-if="modalLoading">Loading...</div>
         <div v-else>
-            <DataTable v-if="companyDrives.length" :columns="companyColumns" :rows="companyDrives">
-
-            
-            
+            <DashboardSection v-if="companyDrives.length"  title="Upcoming Drives">
+                <DataTable   :columns="driveColumns" :rows="companyDrives">
+                    <template #cell-actions="{ row }">
+                       
+                        <AppButton label="Apply" @click="applyToDrive(row.driveId)" class="btn-success">
                 
-            </DataTable>
+                        </AppButton>
+
+                    </template>
+                </DataTable>
+            </DashboardSection>
             <div v-else>
                 No Active Placement Drives
             </div>
@@ -62,7 +67,7 @@ import StatsCard from '../components/StatsCard.vue';
 import { ref, onMounted } from 'vue';
 import DashboardSection from '../components/DashboardSection.vue';
 import DataTable from '../components/DataTable.vue';
-import { getStudentDashboard } from '../services/StudentService.js';
+import { applyDrive, getCompaniesActiveDrivesForStudent, getStudentDashboard } from '../services/StudentService.js';
 import { GET_COMPANY_ACTIVE_DRIVES } from '../utils/urlConstants.js';
 import { getCompaniesActiveDrives } from '../services/CompanyService.js';
 import AppModal from '../components/AppModal.vue';
@@ -117,6 +122,34 @@ const companyColumns = [
 
 
 
+const driveColumns = [
+    {
+        key: "driveName",
+        label: "Drive Title"
+    },
+    {
+        key: "jobTitle",
+        label: "Job Title"
+    },
+    {
+        key: "applicationDeadline",
+        label: "Application Deadline"
+    },
+    {
+        key: "eligibilityCriteria",
+        label: "Eligibility"
+    },
+    {
+        key: "ctc",
+        label: "CTC"
+    },
+    {
+        key: "actions",
+        label: "Actions"
+    }
+];
+
+
 
 
 
@@ -128,11 +161,11 @@ function editProfile(){
 async function viewCompanyDrives(companyId) {
     modalLoading.value = true;
     try {
-        const response = await getCompaniesActiveDrives(companyId);
+        const response = await getCompaniesActiveDrivesForStudent(companyId);
         const data = response.data.data;
         console.log(data)
         selectedCompany.value = data.company;
-        companyDrives.value = data.activeDrives;
+        companyDrives.value = data.drives;
         showCompanyModal.value = true;
 
 
@@ -142,6 +175,20 @@ async function viewCompanyDrives(companyId) {
     finally {
         modalLoading.value = false;
     }
+}
+
+async function applyToDrive(driveId) {
+    try {
+        await applyDrive(driveId);
+        await viewCompanyDrives(selectedCompany.value.company_id)
+        await loadDashboard()
+        // showCompanyModal.value=false
+        
+
+    }catch(err){
+        console.log(err)
+    }
+    
 }
 
 

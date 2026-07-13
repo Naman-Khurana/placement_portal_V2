@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.tasks.export import export_student_applications
 from placementportalcode.student.student_service import *
+from placementportalcode.admin.admin_service import *
+from placementportalcode.company.company_service import *
 
 
 student_bp=Blueprint("student",__name__,url_prefix="/api/student")
@@ -63,11 +65,27 @@ def apply_drive(drive_id):
    
     student = User.query.get(user_id)
     
-    if not student:
-        return error_response(message="Student not found")
+    if not student or student.role != RoleEnum.STUDENT.value:
+        return error_response(message="Unauthorized",status_code=401)
     
+    if not student.eligible:
+        return error_response(message="not eligible to participate in drive",status_code=403)
     
+    drive= PlacementDrive.query.get(drive_id)
+    if not drive:
+        return error_response(message="Placement Drive Not Found ",status_code=404)
   
+    if drive.status != DriveApprovalStatusEnum.APPROVED.value:
+        return error_response(
+            message="This drive is not accepting applications.",
+            status_code=400
+        )
+        
+    if drive.application_deadline < datetime.now():
+        return error_response(
+            message="Application deadline has passed.",
+            status_code=400
+        )
     
     drive = PlacementDrive.query.get(drive_id)
     if not drive:
@@ -87,6 +105,9 @@ def apply_drive(drive_id):
 
         db.session.add(application)
         db.session.commit()
+        cache.delete_memoized(get_admin_applications)
+        cache.delete_memoized(get_admin_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(user_id=drive.company.user.id)
         return success_response(message="Applied Successfully", status_code=201)
 
     
@@ -308,3 +329,66 @@ def export():
         message="Your Export has started. You will receive it by email shortly.",
         status_code=202
     )
+    
+    
+    
+    
+@student_bp.route("/companies/<int:company_id>/drives",methods=[HTTPMethod.GET])
+def get_company_active_drives(company_id):
+    user_id=session.get("user_id")
+    if not user_id:
+        return error_response( message ="Unauthorized", status_code=401) 
+    
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.STUDENT.value:
+        return error_response(message="Unauthorized", status_code=401)
+    
+    current_company=Company.query.get(company_id)
+    if not current_company:
+        return error_response(message='Company Not Found' , status_code=404)
+        
+    
+    now=datetime.now()
+    
+    applied_drive_ids = {
+        application.drive_id
+        for application in Application.query.filter_by(student_id=user_id).all()
+    }
+    
+    drives=PlacementDrive.query.filter(
+            PlacementDrive.company_id==current_company.company_id,
+            PlacementDrive.status == DriveApprovalStatusEnum.APPROVED.value,
+            PlacementDrive.application_deadline >= now
+            
+        ).all()
+        
+    now =datetime.now()
+        
+    drivesList=[]
+    for drive in drives:
+        
+        if drive.drive_id in applied_drive_ids:
+            continue
+        
+        drivesList.append({
+            "driveId": drive.drive_id,
+            "driveName": drive.drive_name,
+            "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
+            "jobTitle":drive.job_title,
+            "eligibilityCriteria":drive.eligibility_criteria,
+            "ctc":drive.ctc,
+            
+        })
+    
+    return success_response(
+        message="Company drives fetched successfully",
+        data={
+        "drives":drivesList,
+        "company":{
+            "companyName":current_company.company_name,
+            "company_id":current_company.company_id
+        }
+        },status_code=200
+    )
+
+

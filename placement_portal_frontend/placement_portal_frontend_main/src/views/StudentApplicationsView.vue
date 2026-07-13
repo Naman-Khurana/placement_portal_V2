@@ -106,6 +106,10 @@ const applicationColumns = [
         label: "Applied On"
     },
     {
+        key:"ctc",
+        label:"CTC"
+    },
+    {
         key: "status",
         label: "Status"
     },

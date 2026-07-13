@@ -15,6 +15,8 @@ export const STUDENT_PROFILE_API=STUDENT_PREFIX + "/profile"
 export const STUDENT_RESUME_UPLOAD_API= STUDENT_PREFIX + "/profile/resume"
 export const STUDENT_APPLICATION_API=STUDENT_PREFIX + "/applications"
 export const STUDENT_APPLICATION_WITHDRAW_API=(driveId)=> STUDENT_PREFIX + `/drives/${driveId}/applications`
+export const STUDENT_DRIVE_APPLY_API=(driveId) => STUDENT_PREFIX+`/drives/${driveId}/applications`
+export const STUDENT_GET_ACTIVE_COMPANY_DRIVES=(companyId) => STUDENT_PREFIX + `/companies/${companyId}/drives`
 
 //company api"
 export const COMPANY_PREFIX= "/api/company"
