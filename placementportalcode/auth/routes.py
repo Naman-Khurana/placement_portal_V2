@@ -47,9 +47,10 @@ def login():
         }
     ,200)
 
-@auth_bp.route("/logout" , methods=[HTTPMethod.GET,HTTPMethod.POST])
+@auth_bp.route("/logout" , methods=[HTTPMethod.POST])
 def logout():
-    session.pop("user_id",None)
+    # session.pop("user_id",None)
+    session.clear();
     return success_response("Logged out successfully",None,200);
 
 @auth_bp.route("/register-company" ,methods=['GET','POST'])

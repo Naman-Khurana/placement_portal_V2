@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { getCurrentUser } from "../services/authService";
+import { getCurrentUser, logout } from "../services/authService";
 
 export const useAuthStore = defineStore("auth", {
     state: () => ({
@@ -16,7 +16,7 @@ export const useAuthStore = defineStore("auth", {
 
         clearAuthentication() {
             this.currentUser = null,
-                this.isAuthenticated = false
+            this.isAuthenticated = false
         },
         async initAuth() {
             this.isInitializing = true;
@@ -29,6 +29,16 @@ export const useAuthStore = defineStore("auth", {
             }
             finally {
                 this.isInitializing = false;
+            }
+        },
+        async logout(){
+            try{
+                await logout();
+            }catch(error){
+                console.log(error);
+                
+            }finally{
+                this.clearAuthentication()
             }
         }
 

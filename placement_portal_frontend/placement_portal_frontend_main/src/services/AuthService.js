@@ -5,6 +5,10 @@ export async function login(credentials) {
     return await api.post(LOGIN_API,credentials);
 }
 
+export async function logout(){
+    return await api.post(LOGOUT_API)
+}
+
 export async function getCurrentUser() {
     return await api.get(GET_CURRENT_USER_API);
 }
