@@ -5,5 +5,5 @@ Werkzeug
 Flask-Cors
 redis
 celery
-flask-caching
+Flask-Caching
 Flask-Mail

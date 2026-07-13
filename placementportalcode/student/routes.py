@@ -12,66 +12,25 @@ from flask import current_app
 from werkzeug.utils import secure_filename
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.tasks.export import export_student_applications
+from placementportalcode.student.student_service import *
 
 
 student_bp=Blueprint("student",__name__,url_prefix="/api/student")
 
 @student_bp.route("/dashboard",methods=[HTTPMethod.GET])
 def dashboard():
-    user_id=session.get("user_id")
-    if not user_id:
-        return error_response(message="Unauthorized",status_code=401)
-    user=User.query.get(user_id)
     
+    user_id=session.get("user_id")
     # if not user or user.role!=RoleEnum.STUDENT.value:
     #     return redirect(url_for("auth.login"))
     
-    registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)
-    student_applications=Application.query.filter(Application.student_id==user.id).all()
-    
-    stats= {
-        "applications" : len(student_applications),
-        "approvedCompanies": registered_companies.count(),
-        "upcomingDrives": PlacementDrive.query.filter(
-            PlacementDrive.status== DriveApprovalStatusEnum.APPROVED.value,
-            PlacementDrive.application_deadline >=datetime.now()
-        ).count() 
-    }
-    
-    approved_companies =[]
-    
-    for company in registered_companies:
-        approved_companies.append({
-            "id":company.company_id,
-            "companyName":company.company_name,
-            "website": company.company_website
-        })
-        
-    applications = []
-    
-    for application in student_applications:
-        applications.append({
-            "applicationId": application.application_id,
-            "status": application.status,
-            "applicationDate" : application.application_date.isoformat(),
-            "driveTitle" : application.drive.drive_name,
-            "companyName" : application.drive.company.company_name
-        })
-
+    # dashboard_data=get_student_dashboard_data(user_id=)
     
     return success_response(
         message="Student Dashboard fetched successfully",
-        data= {
-            "student": {
-                "id":user.id,
-                "name":user.name,
-                "department":user.department,
-                "resumeUploaded": bool(user.resume_path)
-            },
-            "stats" : stats,
-            "approvedCompanies" : approved_companies,
-            "recentApplications": applications
-        },status_code=200)
+        data=get_student_dashboard_data(user_id=user_id),
+        status_code=200)
+    
     
 
 @student_bp.route('/<int:student_id>/<int:company_id>/drives',methods=[HTTPMethod.GET])
@@ -229,24 +188,19 @@ def edit_profile():
     user_id = session.get("user_id")
     if not user_id:
         return error_response(message="Unauthorized" , status_code=401)
+    
+    if(request.method==HTTPMethod.GET):
+        return success_response(
+            data=get_student_profile(user_id=user_id),status_code=200
+        )
+
+    
     student = User.query.get(user_id)
 
     if not student:
         return error_response("Student not found" , status_code=404)
 
-    if(request.method==HTTPMethod.GET):
-        return success_response(
-        
-        
-            data={
-                "name": student.name,
-                "username": student.username,
-                "department": student.department,
-                "dob": student.dob.isoformat() if student.dob else None,
-                "resumePath": student.resume_path
-            },status_code=200
-        )
-
+    
     
 
     data = request.get_json()
@@ -275,7 +229,7 @@ def edit_profile():
             student.dob = datetime.strptime(dob, "%Y-%m-%d").date()
 
         db.session.commit()
-        
+        cache.delete_memoized(get_student_profile,user_id)
         return success_response(
             message="Profile Updated Successfully",
             data={

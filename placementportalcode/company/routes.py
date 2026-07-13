@@ -9,86 +9,18 @@ from placementportalcode.enums.approval_status import DriveApprovalStatusEnum,Co
 from sqlalchemy import or_
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.enums.application_status import ApplicationStatusEnum 
+from placementportalcode.company.company_service import *
 
 company_bp=Blueprint("company",__name__,url_prefix="/api/company")
 
 @company_bp.route("/dashboard",methods=[HTTPMethod.GET] )
 def dashboard():
     user_id=session.get("user_id")
-    if not user_id:
-        
-        return error_response( message ="user not found", status_code=404) 
-    user=User.query.get(user_id)
-    if not user or user.role!=RoleEnum.COMPANY  .value:
-        return error_response(message="user not found", status_code=404)
     
-
-    current_company=user.company
-    if not current_company:
-        return error_response(message='company not found' , status_code=404)
-
-    now=datetime.now()
-
-
-    upcoming_drives=PlacementDrive.query.filter(
-        PlacementDrive.company_id==current_company.company_id,
-        PlacementDrive.application_deadline >=now,
-        PlacementDrive.status == DriveApprovalStatusEnum.APPROVED.value
-    ).order_by(PlacementDrive.application_deadline.asc()).all()
-        
-    drivesList=[]
-    for drive in upcoming_drives:
-        
-        
-        application_count = Application.query.filter_by(drive_id=drive.drive_id).count()
-
-        drivesList.append({
-            "driveId": drive.drive_id,
-            "title": drive.drive_name,
-            "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
-            "applicationCount": application_count,
-
-            "status": drive.status
-        })
-    
-    closed_drives=PlacementDrive.query.filter(
-        PlacementDrive.company_id==current_company.company_id,
-        or_(
-            PlacementDrive.application_deadline < now,
-            PlacementDrive.status==DriveApprovalStatusEnum.CLOSED.value
-        )).count()
-        
-    total_applications=Application.query.join(
-        PlacementDrive, Application.drive_id == PlacementDrive.drive_id
-    ).filter(
-        PlacementDrive.company_id == current_company.company_id
-    ).count()
-    
-    hired_students = Application.query.join(
-        PlacementDrive,
-        Application.drive_id == PlacementDrive.drive_id
-    ).filter(
-        PlacementDrive.company_id == current_company.company_id,
-        Application.status == ApplicationStatusEnum.HIRED.value
-    ).count()
-        
-      
-
     return success_response(
         message="Dashboard fetched successfully",
-        data={
-            "company": {
-                "companyName": current_company.company_name,
-                "approval_status": current_company.approval_status     
-            },
-            "stats":{
-                "upcomingDrives" : len(upcoming_drives),
-                "closedDrives": closed_drives,
-                "totalApplications": total_applications,
-                "hiredStudents" : hired_students
-            },
-            "upcomingDrives": drivesList
-        }
+        data=get_company_dashboard_data(user_id=user_id),
+        status_code=200
     )
     
     
@@ -96,8 +28,15 @@ def dashboard():
 def drives():
     user_id=session.get("user_id")
     if not user_id:
-        
         return error_response( message ="user not found", status_code=404) 
+    
+    if(request.method==HTTPMethod.GET):
+    
+        return success_response(
+            message="Company drives fetched successfully",
+            data=get_company_drives(user_id=user_id)
+        )
+    
     user=User.query.get(user_id)
     if not user or user.role!=RoleEnum.COMPANY  .value:
         return error_response(message="user not found", status_code=404)
@@ -107,57 +46,7 @@ def drives():
     if not current_company:
         return error_response(message='company not found' , status_code=404)
     
-    if(request.method==HTTPMethod.GET):
     
-        now=datetime.now()
-
-
-        all_drives=PlacementDrive.query.filter(
-            PlacementDrive.company_id==current_company.company_id,
-        ).all()
-        
-        upcoming_drives=[]
-        closed_drives=[]
-        pending_approval_drives=[]
-        rejected_drives=[]
-        now =datetime.now()
-            
-        # drivesList=[]
-        for drive in all_drives:
-            drivesList=None
-            
-            if(drive.status== DriveApprovalStatusEnum.PENDING.value):
-                drivesList=pending_approval_drives
-            elif(drive.status== DriveApprovalStatusEnum.REJECT.value):
-                drivesList=rejected_drives
-            elif(drive.status== DriveApprovalStatusEnum.APPROVED.value and drive.application_deadline>=now):
-                drivesList=upcoming_drives
-            else:
-                drivesList=closed_drives
-            application_count = Application.query.filter_by(drive_id=drive.drive_id).count()
-
-            drivesList.append({
-                "driveId": drive.drive_id,
-                "driveName": drive.drive_name,
-                "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
-                "applicationCount":application_count,
-                "jobTitle":drive.job_title,
-                "eligibilityCriteria":drive.eligibility_criteria,
-                "ctc":drive.ctc,
-                "status": drive.status
-            })
-
-        
-
-        return success_response(
-            message="Company drives fetched successfully",
-            data={
-                "upcomingDrives":upcoming_drives,
-                "pendingApprovalDrives":pending_approval_drives,
-                "rejectedDrives":rejected_drives,
-                "closedDrives":closed_drives
-            }
-        )
     
     data=request.get_json()
     drive_name=data.get(PlacementDriveEnum.DRIVE_NAME.value)
@@ -186,6 +75,7 @@ def drives():
         db.session.add(new_drive)
         db.session.commit()
 
+        invalidate_company_dashboard_and_drives_cache()
         return success_response(
             message="Drive created successfully.",
             data={
@@ -199,6 +89,7 @@ def drives():
                 "ctc":new_drive.ctc
             },status_code=201
         )
+        
     except Exception as e:
         db.session.rollback()
         return error_response(message=str(e), status_code=500)
@@ -266,7 +157,7 @@ def update_drive(id):
             
             drive.status= new_status
             db.session.commit()
-        
+            invalidate_company_dashboard_and_drives_cache()
             return success_response(message="drive status updated",status_code=200)
         except Exception as e:
             db.session.rollback()
@@ -291,6 +182,7 @@ def update_drive(id):
     
         try:
             db.session.commit()
+            invalidate_company_dashboard_and_drives_cache()
             return success_response(message="drive updated successfully", status_code=200)
         except Exception as e:
             db.session.rollback()
@@ -304,6 +196,15 @@ def edit_profile():
     if not user_id:
         
         return error_response( message ="user not found", status_code=404) 
+    
+    if request.method==HTTPMethod.GET:
+        return success_response(
+            message="company profile fetched successfully",
+            data=get_company_profile(user_id=user_id)
+            ,status_code=200
+        )
+    
+    
     user=User.query.get(user_id)
     if not user or user.role!=RoleEnum.COMPANY  .value:
         return error_response(message="user not found", status_code=404)
@@ -312,19 +213,6 @@ def edit_profile():
     company=user.company
     if not company:
         return error_response(message='company not found' , status_code=404)
-    
-    if request.method==HTTPMethod.GET:
-        return success_response(
-            message="company profile fetched successfully",
-            data={
-                "companyId":company.company_id,
-                "companyName" : company.company_name,
-                "companyWebsite":company.company_website,
-                "hrContact":company.hr_contact,
-                "approvalStatus":company.approval_status   
-            },status_code=200
-        )
-    
     
     data = request.get_json()
 
@@ -341,6 +229,9 @@ def edit_profile():
    
     try:
         db.session.commit()
+        
+        cache.delete_memoized(get_company_profile,user_id)
+        
         return success_response(
             message="company profile updated successfully",
             data={

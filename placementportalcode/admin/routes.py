@@ -10,6 +10,9 @@ from placementportalcode.extensions import db
 from datetime import datetime
 from sqlalchemy import or_
 from placementportalcode.utils.responses import success_response,error_response
+from placementportalcode.admin.admin_service import *
+from placementportalcode.student.student_service import * 
+from placementportalcode.company.company_service import *
 
 
 admin_bp=Blueprint("admin",__name__,url_prefix="/api/admin")
@@ -19,62 +22,11 @@ def dashboard():
     if not checkAdmin():
         return error_response(message="Unauthorized",status_code=403)
    
-    now=datetime.now()
-    total_company_count=  Company.query.count()
     
-    pending_approval_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.PENDING.value).all()
-    # registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)    
-    # blacklisted_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.BLACKLISTED.value)
-    
-    total_student_count= User.query.filter_by( role=RoleEnum.STUDENT.value).count()
-    # registered_students=User.query.filter_by(role=RoleEnum.STUDENT.value )
-
-    total_drive_count=PlacementDrive.query.count()
-    pending_approval_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.PENDING.value).all()
-    # rejected_drives=PlacementDrive.query.filter(PlacementDrive.status==DriveApprovalStatusEnum.REJECT.value)
-    # ongoing_drives=PlacementDrive.query.filter(PlacementDrive.status=='approved',PlacementDrive.status==DriveApprovalStatusEnum.APPROVED.value)
-    
-    total_application_count= Application.query.count()
-    # student_applications=Application.query.all()
-    
-    pendingApprovalCompanies=[]
-    
-    for company in pending_approval_companies:
-        pendingApprovalCompanies.append({
-            "companyId":company.company_id, 
-            "companyName":company.company_name,
-            "website":company.company_website,
-            "hrContact":company.hr_contact,
-            "status":company.approval_status
-        })
-        
-    pendingApprovalDrives=[]
-    
-    for drive in pending_approval_drives:
-        pendingApprovalDrives.append({
-            "driveId":drive.drive_id,
-            "driveName":drive.drive_name,
-            "jobTitle":drive.job_title, 
-            "ctc":drive.ctc,
-            # "job_desc":drive.company_name,
-            # "eligibility_criteria":drive.company_website,
-            "applicationDeadline":drive.application_deadline.strftime("%d %b %Y"),
-            "status":drive.status
-        })
-
    
     return success_response(
         message="admin dashboard fetched successfully",
-        data= {
-            "stats":{
-                "companies":total_company_count,
-                "students":total_student_count,
-                "drives":total_drive_count,
-                "applications": total_application_count
-            },
-            "pendingDrives":pendingApprovalDrives,
-            "pendingCompanies":pendingApprovalCompanies
-        },
+        data=get_admin_dashboard_data(),
         status_code=200
         )
     
@@ -86,44 +38,12 @@ def get_companies():
     if not checkAdmin():
         return error_response(message="Unauthorized",status_code=403)
    
+    search = request.args.get("search")
     
-    query = Company.query
-    
-    search=request.args.get("search")
-    
-    if(search):
-        query=query.filter(
-            Company.company_name.ilike(f"%{search}%")
-        )
-    companies=query.all()
-    
-    pendingCompanies = []
-    approvedCompanies = []
-    blacklistedCompanies = []
-    
-    for company in companies:
-        companyData = {
-            "companyId": company.company_id,
-            "companyName": company.company_name,
-            "companyWebsite": company.company_website,
-            "hrContact": company.hr_contact,
-            "approvalStatus": company.approval_status
-        }
-        
-        if company.approval_status==CompanyEnumStatus.PENDING.value:
-            pendingCompanies.append(companyData)
-        elif company.approval_status==CompanyEnumStatus.APPROVED.value:
-            approvedCompanies.append(companyData)
-        elif company.approval_status==CompanyEnumStatus.BLACKLISTED.value:
-            blacklistedCompanies.append(companyData)
-        
     return success_response(
         message="all companies data fetched",
-        data ={
-            "pendingCompanies":pendingCompanies,
-            "approvedCompanies":approvedCompanies,
-            "blacklistedCompanies":blacklistedCompanies
-        },status_code=200
+        data =get_admin_companies(search=search),
+        status_code=200
     )
 
 
@@ -134,52 +54,11 @@ def get_drives():
     if not checkAdmin():
         return error_response(message="Unauthorized",status_code=403)
    
-    
-    query = PlacementDrive.query
-    
     search=request.args.get("search")
-    
-    if(search):
-        query=query.filter(
-            PlacementDrive.drive_name.ilike(f"%{search}%")
-        )
-    drives=query.all()
-    
-    pendingDrives = []
-    approvedDrives = []
-    closedDrives = []
-    rejectedDrives = []
-    
-    now = datetime.now()
-    
-    for drive in drives:
-        driveData = {
-            "driveId": drive.drive_id,
-            "driveName": drive.drive_name,
-            "jobTitle": drive.job_title,
-            "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
-            "company": drive.company.company_name,
-            "status": drive.status,
-            "ctc" : drive.ctc
-        }
-        
-        if drive.status==DriveApprovalStatusEnum.PENDING.value:
-            pendingDrives.append(driveData)
-        elif drive.status==DriveApprovalStatusEnum.APPROVED.value and drive.application_deadline >= now:
-            approvedDrives.append(driveData)
-        elif drive.status==DriveApprovalStatusEnum.REJECT.value:
-            rejectedDrives.append(driveData)
-        else:
-            closedDrives.append(driveData)
         
     return success_response(
         message="all drives data fetched",
-        data ={
-            "pendingDrives":pendingDrives,
-            "approvedDrives":approvedDrives,
-            "rejectedDrives":rejectedDrives,
-            "closedDrives":closedDrives
-        },
+        data =get_admin_drives(search=search),
         status_code=200
     )
 
@@ -189,33 +68,11 @@ def get_students():
     if not checkAdmin():
         return error_response(message="Unauthorized",status_code=403)
    
-    
-    query = User.query.filter(
-        User.role== RoleEnum.STUDENT.value
-    )
     search=request.args.get("search")
-    
-    if(search):
-        query=query.filter(
-            User.name.ilike(f"%{search}%")
-        )
-    students=query.all()
-    studentsData=[];
-    for student in students:
-        studentData = {
-            "studentId" : student.id,
-            "name": student.name,
-            "eligible": student.eligible
-        }
-        studentsData.append(studentData)
-        
-        
         
     return success_response(
         message="all students data fetched",
-        data ={
-            "students":studentsData
-        },
+        data =get_admin_students(search=search),
         status_code=200
     )
 
@@ -227,42 +84,11 @@ def get_applications():
     if not checkAdmin():
         return error_response(message="Unauthorized",status_code=403)
    
-    query=Application.query
-    query = (
-    Application.query
-        .join(Application.student)
-        .join(Application.drive)
-        .join(PlacementDrive.company)
-    )
     search = request.args.get("search")
-    if search:
-        query = query.filter(
-            or_(
-                User.name.ilike(f"%{search}%"),
-                PlacementDrive.drive_name.ilike(f"%{search}%"),
-                Company.company_name.ilike(f"%{search}%")
-            )
-        ).distinct()
-    applications=query.all()
-    applicationsData=[]
-    for application in applications:
-        applicationData = {
-            "applicationId":application.application_id,
-            "companyName" : application.drive.company.company_name,
-            "studentName": application.student.name,
-            "status": application.status,
-            "applicationDate":application.application_date.strftime("%d %b %Y"),
-            "driveName":application.drive.drive_name
-        }
-        applicationsData.append(applicationData)
-        
-        
         
     return success_response(
         message="all applications data fetched",
-        data ={
-            "applications":applicationsData
-        },
+        data =get_admin_applications(search=search),
         status_code=200
     )
 
@@ -285,6 +111,10 @@ def update_company_status(company_id):
         return error_response(message="Bad Request", status_code=400)
     try:
         db.session.commit()
+        cache.delete_memoized(get_admin_companies)
+        cache.delete_memoized(get_admin_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(company.user.id)
+        cache.delete_memoized(get_company_profile, company.user.id)
         return success_response(message="company status updated successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
@@ -310,6 +140,10 @@ def update_drive_status(drive_id):
 
     try:
         db.session.commit()
+        cache.delete_memoized(get_admin_drives)
+        cache.delete_memoized(get_admin_dashboard_data)
+        # cache.delete_memoized(get_student_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(drive.company.user.id)
         return success_response(message="drive status updated successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
@@ -333,6 +167,8 @@ def update_student_status(student_id):
 
     try:
         db.session.commit()
+        cache.delete_memoized(get_admin_students)
+        # cache.delete_memoized(get_student_dashboard_data,student.id)
         return success_response(message="student status updated successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
@@ -363,6 +199,9 @@ def update_application_status(application_id):
 
     try:
         db.session.commit()
+        cache.delete_memoized(get_admin_applications)
+        # cache.delete_memoized(get_student_dashboard_data,application.student.id)
+        invalidate_company_dashboard_and_drives_cache(application.drive.company.user.id)
         return success_response(message="application status updated successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
