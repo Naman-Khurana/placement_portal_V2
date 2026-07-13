@@ -168,12 +168,16 @@ const router = createRouter({
     ]
 });
 
-router.beforeEach((destination) => {
+router.beforeEach(async (destination) => {
     const authStore = useAuthStore();
 
     console.log("Navigating to:", destination.path);
     console.log("requiresAuth:", destination.meta.requiresAuth);
     console.log("isAuthenticated:", authStore.isAuthenticated);
+
+    if (!authStore.isAuthenticated && !authStore.isInitializing) {
+        await authStore.initAuth();
+    }
 
     if (destination.meta.requiresAuth && !authStore.isAuthenticated) {
         console.log("Redirecting to login");

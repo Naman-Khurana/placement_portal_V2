@@ -6,11 +6,20 @@ import router from './router/index.js'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { useAuthStore } from './stores/AuthStore.js'
 
 
 
 
-createApp(App)
-    .use(router)
-    .use(createPinia())
-    .mount('#app')
+
+const app = createApp(App)
+
+const pinia =createPinia()
+app.use(pinia)
+
+const authStore = useAuthStore()
+
+await authStore.initAuth()  
+
+app.use(router)
+app.mount('#app')

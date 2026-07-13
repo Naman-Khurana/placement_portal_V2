@@ -5,10 +5,6 @@ import { useAuthStore } from './stores/AuthStore.js';
 
 const authStore = useAuthStore();
 
-onMounted(() => {
-  authStore.initAuth();
-});
-
 </script>
 
 <template>

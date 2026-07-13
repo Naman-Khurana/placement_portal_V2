@@ -13,9 +13,6 @@ export async function getCurrentUser() {
     return await api.get(GET_CURRENT_USER_API);
 }
 
-export async function logout(userid) {
-    return await api.post(LOGOUT_API,userid);
-}
 
 export async function registerStudent(studentData) {
     return await api.post(REGISTER_STUDENT_API,studentData);
