@@ -96,8 +96,21 @@ def drives():
         return error_response(message=str(e), status_code=500)
     
 
-@company_bp.route("/update-applicant-status", methods=[HTTPMethod.POST])
+@company_bp.route("drive/<int:dri>/update-applicant-status", methods=[HTTPMethod.POST])
 def update_applicant_status():
+    user_id=session.get("user_id")
+    if not user_id:
+        return error_response( message ="user not found", status_code=404) 
+    
+    
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.COMPANY  .value:
+        return error_response(message="user not found", status_code=404)
+    
+
+    current_company=user.company
+    if not current_company:
+        return error_response(message='company not found' , status_code=404)
 
     application_id = request.form.get("application_id")
     status = request.form.get("status")
@@ -109,6 +122,57 @@ def update_applicant_status():
     db.session.commit()
 
     return redirect(request.referrer)
+
+@company_bp.route("/drives/<int:drive_id>/applications",methods=[HTTPMethod.GET])
+def get_drive_applicants(drive_id):
+    
+    user_id=session.get("user_id")
+    if not user_id:
+        return error_response( message ="Unauthorized", status_code=401) 
+    
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.COMPANY.value:
+        return error_response(message="Unauthorized", status_code=401)
+
+    drive = PlacementDrive.query.get(drive_id)
+    
+    if request.method == HTTPMethod.GET:
+        
+    
+        applications = (
+            Application.query
+            .filter_by(drive_id=drive_id)
+            .all()
+        )
+
+        applicants = []
+
+        for application in applications:
+            student = application.student
+
+            applicants.append({
+                "applicationId": application.application_id,
+                "studentId": student.id,
+                "studentName": student.name,
+                "email": student.username,
+                "department": student.department,
+                "status": application.status,
+                "applicationDate": application.application_date.strftime("%d %b %Y"),
+                "resume":student.resume_path
+            })
+
+        return success_response(data={
+            "drive":{
+                "driveId":drive.drive_id,
+                "driveName":drive.drive_name,
+                "jobTitle":drive.job_title,    
+            },
+            "applications":applicants
+        })
+        
+    
+    
+    
 
 
 @company_bp.route("/close-drive", methods=[HTTPMethod.POST])
@@ -281,3 +345,75 @@ def on_click_company_drives(company_id):
     }
         
     return success_response(data=data,message="Company drives fetched successfully", status_code=200)
+
+
+
+@company_bp.route("/applications/<int:application_id>/status", methods=[HTTPMethod.PATCH])
+def update_application_status(application_id):
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return error_response(
+            message="Unauthorized",
+            status_code=401
+        )
+
+    user = User.query.get(user_id)
+
+    if not user or user.role != RoleEnum.COMPANY.value:
+        return error_response(
+            message="Unauthorized",
+            status_code=403
+        )
+
+    application = Application.query.get(application_id)
+
+    if not application:
+        return error_response(
+            message="Application not found",
+            status_code=404
+        )
+
+    if application.drive.company.user.id != user_id:
+        return error_response(
+            message="Forbidden",
+            status_code=403
+        )
+
+    data = request.get_json()
+
+    status = data.get("status")
+
+    if not status:
+        return error_response(
+            message="Status is required",
+            status_code=400
+        )
+
+    status = status.lower()
+
+    allowed_statuses = {
+        ApplicationStatusEnum.APPLIED.value,
+        ApplicationStatusEnum.SHORTLISTED.value,
+        ApplicationStatusEnum.WAITLISTED.value,
+        ApplicationStatusEnum.SELECTED.value,
+        ApplicationStatusEnum.HIRED.value,
+        ApplicationStatusEnum.REJECTED.value
+    }
+
+    if status not in allowed_statuses:
+        return error_response(
+            message="Invalid status",
+            status_code=400
+        )
+
+    application.status = status
+    
+    try:
+
+        db.session.commit()
+        return success_response(message="Status updated successfully", status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)

@@ -7,7 +7,7 @@
                     <AppButton
                         label="Create Drive +"
                         @click="showCreateDriveModal = true"
-                        :disabled="drives.company.approvalStatus !== 'approved'"
+                        :disabled="drives.company.approvalStatus !== 'approved' " class="btn-success"
                     />
 
                     <div
@@ -32,12 +32,16 @@
             <DashboardSection title="Upcoming Drives">
                 <DataTable :columns="driveColumns" :rows="drives.upcomingDrives">
                     <template #cell-actions="{ row }">
-                        <AppButton label="Edit" @click="editDrive(row)" />
-                        <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
-                            @click="changeDriveStatus(row.driveId, 'CLOSED')" />
-
-                        <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
-                            @click="changeDriveStatus(row.driveId, 'APPROVED')" />
+                        <div class="d-flex flex-row gap-1">
+                            <AppButton label="Edit" @click="editDrive(row)" />
+                            <AppButton  label="View Applications"
+                                @click="viewDriveApplicants(row.driveId)" class='btn-secondary' />
+                            <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
+                                                            @click="changeDriveStatus(row.driveId, 'CLOSED')" class='btn-danger' />
+                            <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
+                                @click="changeDriveStatus(row.driveId, 'APPROVED')" />
+                            
+                        </div>
                     </template>
 
                     <template #cell-status="{ row }">
@@ -50,6 +54,7 @@
 
             <DashboardSection title="Pending Drives" subtitle="*subject to approval from admin">
                 <DataTable :columns="driveColumns" :rows="drives.pendingApprovalDrives">
+    
                     <template #cell-actions="{ row }">
                         <AppButton label="Edit" @click="editDrive(row)" />
                     </template>
@@ -63,12 +68,16 @@
             <DashboardSection title="Closed Drives">
                 <DataTable :columns="driveColumns" :rows="drives.closedDrives">
                     <template #cell-actions="{ row }">
-                        <AppButton label="Edit" @click="editDrive(row)" />
-                        <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
-                            @click="changeDriveStatus(row.driveId, 'CLOSED')" />
+                        <div class='d-flex flex-column gap-1'>
+                            <AppButton label="Edit" @click="editDrive(row)" />
+                            <AppButton  label="View Applications"
+                                @click="viewDriveApplicants(row.driveId)" class='btn-secondary' />
+                            <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
+                                @click="changeDriveStatus(row.driveId, 'CLOSED')" class='btn-danger' />
 
-                        <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
-                            @click="changeDriveStatus(row.driveId, 'APPROVED')" />
+                            <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
+                                @click="changeDriveStatus(row.driveId, 'APPROVED')" class='btn-success' />
+                        </div>
                     </template>
 
                     <template #cell-status="{ row }">
@@ -102,15 +111,40 @@
 
     </AppModal>
 
+    <AppModal v-model="showApplicationsModal" title="Drive Applications">
 
-</template>
+        <div v-if="applicantsLoading">Loading...</div>
+
+        <DashboardSection v-else title="Applications" >
+            <DataTable :columns="applicationColumns" :rows="driveApplicants" >
+                <template #cell-status="{ row }">
+                    <AppDropDown
+                        :status="row.status"
+                        @change="status => updateApplicationStatus(row.applicationId, status)" />
+                 
+                </template>
+
+                <template #cell-resume="{ row }">
+
+                    <AppButton label="View Resume" @click="viewResume(row.resume)" class="btn-secondary" />
+
+                </template>
+
+            </DataTable>
+
+        </DashboardSection>
+
+    </AppModal>
+
+
+    </template>
 
 
 <script setup>
 import { create } from 'axios';
 import PageHeader from '../../components/PageHeader.vue';
 import DashboardLayout from '../../layout/DashboardLayout.vue';
-import { createCompanyDrive, editCompanyDrive, getCompanyDrives, updateCompanyDriveStatus } from '../../services/CompanyService.js';
+import { createCompanyDrive, editCompanyDrive, getCompanyDriveApplications, getCompanyDrives, updateCompanyApplicationStatus, updateCompanyDriveStatus } from '../../services/CompanyService.js';
 import { companySidebarItems } from '../../utils/CompanyUtils';
 import { ref, onMounted, reactive } from 'vue';
 import AppButton from '../../components/AppButton.vue';
@@ -119,6 +153,7 @@ import DataTable from '../../components/DataTable.vue';
 import AppModal from '../../components/AppModal.vue';
 import DriveForm from '../../components/DriveForm.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
+import AppDropDown from '../../components/AppDropDown.vue';
 
 const loading = ref(false)
 const error = ref("")
@@ -127,6 +162,12 @@ const showCreateDriveModal = ref(false);
 const isEditing = ref(false);
 const editingDriveId = ref(null);
 
+const showApplicationsModal = ref(false);
+const applicantsLoading = ref(false);
+
+const driveApplicants = ref([]);
+
+const selectedDriveId = ref(null);
 
 const drives = ref({
     upcomingDrives: [],
@@ -171,6 +212,37 @@ const driveColumns = [
         key: "actions",
         label: "Actions"
     }
+];
+
+
+const applicationColumns = [
+    {
+        key: "studentName",
+        label: "Student"
+    },{
+        key:"email",
+        label:"Email"
+    },
+    {
+        key: "department",
+        label: "Department"
+    },
+    {
+        key: "applicationDate",
+        label: "Applied On"
+    },
+    {
+        key: "status",
+        label: "Status"
+    },
+    {
+        key: "resume",
+        label: "Resume"
+    },
+    // {
+    //     key: "actions",
+    //     label: "Actions"
+    // }
 ];
 
 
@@ -248,6 +320,39 @@ async function changeDriveStatus(driveId,status){
     }
 }
 
+async function viewDriveApplicants(driveId) {
+    applicantsLoading.value = true;
+    selectedDriveId.value = driveId;
+    try {
+        const response = await getCompanyDriveApplications(driveId);
+        driveApplicants.value = response.data.data.applications;
+        console.log(driveApplicants.value.applications)
+        showApplicationsModal.value = true;
+    } catch (err) {
+        console.log(err);
+    } finally {
+        applicantsLoading.value = false;
+    }
+}
+
+async function updateApplicationStatus(applicationId, status) {
+
+    try {
+
+        await updateCompanyApplicationStatus(applicationId, status);
+        await viewDriveApplicants(selectedDriveId.value);
+
+        await loadDrives();
+
+    } catch (err) {
+        console.log(err);
+    }
+
+}
+
+function viewResume(url) {
+    window.open(url, "_blank");
+}
 
 async function editDrive(row) {
 

@@ -90,14 +90,14 @@ const driveColumns = [
         key: "applicationCount",
         label: "Applications"
     },
-    {
-        key: "status",
-        label: "Status"
-    },
-    {
-        key: "actions",
-        label: "Action"
-    }
+    // {
+    //     key: "status",
+    //     label: "Status"
+    // },
+    // {
+    //     key: "actions",
+    //     label: "Action"
+    // }
 ];
 
 

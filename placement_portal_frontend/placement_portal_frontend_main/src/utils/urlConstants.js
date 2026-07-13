@@ -25,9 +25,10 @@ export const COMPANY_DASHBOARD_API= COMPANY_PREFIX + "/dashboard"
 export const COMPANY_DRIVES_API= COMPANY_PREFIX + "/drives"
 export const COMPANY_DRIVES_EDIT_API=(driveId)=> COMPANY_PREFIX + `/drives/${driveId}`
 export const COMPANY_PROFILE_API= COMPANY_PREFIX + "/profile"
+export const COMPANY_DRIVE_APPLICANTS_API =(driveId)=> COMPANY_PREFIX + `/drives/${driveId}/applications` 
+export const COMPANY_UPDATE_APPLICATION_STATUS=(applicationId) => COMPANY_PREFIX + `/applications/${applicationId}/status`
 
 //admin apis
-
 export const ADMIN_PREFIX= "/api/admin"
 export const ADMIN_DASHBOARD_API= ADMIN_PREFIX + "/dashboard"
 export const ADMIN_COMPANIES_STATUS_UPDATE_API=(id)=>ADMIN_PREFIX + `/companies/${id}/status`
