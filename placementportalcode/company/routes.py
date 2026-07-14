@@ -10,6 +10,8 @@ from sqlalchemy import or_
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.enums.application_status import ApplicationStatusEnum 
 from placementportalcode.company.company_service import *
+from placementportalcode.admin.admin_service import *
+from placementportalcode.company.company_service import *
 
 company_bp=Blueprint("company",__name__,url_prefix="/api/company")
 
@@ -83,10 +85,11 @@ def drives():
                 "driveName":new_drive.drive_name,
                 "companyId":new_drive.company_id,
                 "jobTitle":new_drive.job_title,
-                "jobDescription":new_drive.job_desc,
+                "jobDescription":new_drive.job_desc,    
                 "status":new_drive.status,
                 "eligibilityCriteria":new_drive.eligibility_criteria,
                 "applicationDeadline":new_drive.application_deadline,
+                "applicationDeadlineRaw":new_drive.application_deadline.strftime("%Y-%m-%dT%H:%M"),
                 "ctc":new_drive.ctc
             },status_code=201
         )
@@ -188,10 +191,9 @@ def close_drive():
 
     
 
-@company_bp.route("/drives/<int:id>", methods=[HTTPMethod.PUT,HTTPMethod.PATCH])
-def update_drive(id):
-    if(request.method==HTTPMethod.PATCH):
-            
+@company_bp.route("/drives/<int:drive_id>", methods=[HTTPMethod.PUT,HTTPMethod.PATCH])
+def update_drive(drive_id):
+    if request.method==HTTPMethod.PATCH:
         user_id=session.get("user_id")
         if not user_id:
             
@@ -204,9 +206,8 @@ def update_drive(id):
         current_company=user.company
         if not current_company:
             return error_response(message='company not found' , status_code=404)
-        drive = PlacementDrive.query.get(id)
-        data =request.get_json()
-        new_status= data.get("status")
+        drive = PlacementDrive.query.get(drive_id)
+
         if not drive:
             return error_response(message="Drive not found",status_code=404)
         
@@ -216,21 +217,32 @@ def update_drive(id):
                 status_code=403
             )
         
-        if (drive.status!= DriveApprovalStatusEnum.APPROVED.value and drive.status!= DriveApprovalStatusEnum.CLOSED.value) or (new_status!= DriveApprovalStatusEnum.APPROVED.value and new_status!= DriveApprovalStatusEnum.CLOSED.value ):
-            return error_response(message="Unauthorized",status_code=403)
+        # drive=PlacementDrive.query.get(drive_id)
+    
+        data =request.get_json()
+        action=data.get('action')
+        
+        if(action=='reopen'):
+            drive.status=DriveApprovalStatusEnum.APPROVED.value
+        elif action=='close':
+            drive.status=DriveApprovalStatusEnum.CLOSED.value
+        else:
+            return error_response(message="Bad Request", status_code=400)
+
         try:
-            
-            drive.status= new_status
             db.session.commit()
-            invalidate_company_dashboard_and_drives_cache()
-            return success_response(message="drive status updated",status_code=200)
+            cache.delete_memoized(get_admin_drives)
+            cache.delete_memoized(get_admin_dashboard_data)
+            # cache.delete_memoized(get_student_dashboard_data)
+            invalidate_company_dashboard_and_drives_cache(drive.company.user.id)
+            return success_response(message="drive status updated successfully",status_code=200)
         except Exception as e:
             db.session.rollback()
             return error_response(message=str(e),status_code=500)
     
     
     if(request.method==HTTPMethod.PUT):
-        drive = PlacementDrive.query.get(id)
+        drive = PlacementDrive.query.get(drive_id)
         if not drive:
             return error_response(message="Drive not found",status_code=404)
         data = request.get_json()
@@ -248,6 +260,8 @@ def update_drive(id):
         try:
             db.session.commit()
             invalidate_company_dashboard_and_drives_cache()
+            cache.delete_memoized(get_admin_drives)
+            cache.delete_memoized(get_admin_dashboard_data)
             return success_response(message="drive updated successfully", status_code=200)
         except Exception as e:
             db.session.rollback()
@@ -414,6 +428,55 @@ def update_application_status(application_id):
 
         db.session.commit()
         return success_response(message="Status updated successfully", status_code=200)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(message=str(e),status_code=500)
+    
+    
+@company_bp.route("/drives/<int:drive_id>/status",methods=[HTTPMethod.PATCH])
+def update_drive_status(drive_id):
+    user_id=session.get("user_id")
+    if not user_id:
+        
+        return error_response( message ="user not found", status_code=404) 
+    user=User.query.get(user_id)
+    if not user or user.role!=RoleEnum.COMPANY  .value:
+        return error_response(message="user not found", status_code=404)
+    
+
+    current_company=user.company
+    if not current_company:
+        return error_response(message='company not found' , status_code=404)
+    drive = PlacementDrive.query.get(drive_id)
+
+    if not drive:
+        return error_response(message="Drive not found",status_code=404)
+    
+    if drive.company_id != current_company.company_id:
+        return error_response(
+            message="Unauthorized",
+            status_code=403
+        )
+    
+    # drive=PlacementDrive.query.get(drive_id)
+   
+    data =request.get_json()
+    action=data.get('action')
+    
+    if(action=='reopen'):
+        drive.status=DriveApprovalStatusEnum.APPROVED.value
+    elif action=='close':
+        drive.status=DriveApprovalStatusEnum.CLOSED.value
+    else:
+        return error_response(message="Bad Request", status_code=400)
+
+    try:
+        db.session.commit()
+        cache.delete_memoized(get_admin_drives)
+        cache.delete_memoized(get_admin_dashboard_data)
+        # cache.delete_memoized(get_student_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(drive.company.user.id)
+        return success_response(message="drive status updated successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
         return error_response(message=str(e),status_code=500)

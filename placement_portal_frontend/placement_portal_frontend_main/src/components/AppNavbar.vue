@@ -3,7 +3,7 @@
         <div class="navbar-brand fw-bold">Placement Portal</div>
         <div class="d-flex gap-5 align-items-center">
             <div class="ms-auto">
-                User
+               
             </div>
             <AppButton label="Logout" loading-label="Logging out..." type="danger" @click="logoutUser()">Logout</AppButton>
         </div>

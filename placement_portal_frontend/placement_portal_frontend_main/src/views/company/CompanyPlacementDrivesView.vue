@@ -37,9 +37,9 @@
                             <AppButton  label="View Applications"
                                 @click="viewDriveApplicants(row.driveId)" class='btn-secondary' />
                             <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
-                                                            @click="changeDriveStatus(row.driveId, 'CLOSED')" class='btn-danger' />
-                            <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
-                                @click="changeDriveStatus(row.driveId, 'APPROVED')" />
+                                                            @click="changeDriveStatus(row.driveId, 'close')" class='btn-danger' />
+                            <AppButton v-if="row.status.toUpperCase() === 'close'" label="Reopen"
+                                @click="changeDriveStatus(row.driveId, 'reopen')" />
                             
                         </div>
                     </template>
@@ -72,11 +72,11 @@
                             <AppButton label="Edit" @click="editDrive(row)" />
                             <AppButton  label="View Applications"
                                 @click="viewDriveApplicants(row.driveId)" class='btn-secondary' />
-                            <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
-                                @click="changeDriveStatus(row.driveId, 'CLOSED')" class='btn-danger' />
 
+                            <AppButton v-if="row.status.toUpperCase() === 'APPROVED'" label="Close"
+                                @click="changeDriveStatus(row.driveId, 'close')" class='btn-danger' />
                             <AppButton v-if="row.status.toUpperCase() === 'CLOSED'" label="Reopen"
-                                @click="changeDriveStatus(row.driveId, 'APPROVED')" class='btn-success' />
+                                @click="changeDriveStatus(row.driveId, 'reopen')" class='btn-success' />
                         </div>
                     </template>
 
@@ -350,8 +350,8 @@ async function updateApplicationStatus(applicationId, status) {
 
 }
 
-function viewResume(url) {
-    window.open(url, "_blank");
+function viewResume(path) {
+    window.open(`http://localhost:5000/${path}`, "_blank");
 }
 
 async function editDrive(row) {

@@ -292,7 +292,14 @@ def update_resume():
         
         filename = secure_filename(file.filename)
 
-        filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+        filepath = os.path.join(
+            current_app.root_path,
+            "static",
+            "uploads",
+            "resumes",
+            filename
+        )
+
         file.save(filepath)
 
         if student.resume_path:
@@ -300,8 +307,8 @@ def update_resume():
             if os.path.exists(old_path):
                 os.remove(old_path)
 
-        student.resume_path = f"uploads/resumes/{filename}"
-        
+        student.resume_path = f"static/uploads/resumes/{filename}"
+
         db.session.commit()
         return success_response(
             message="Resume uploaded successfully",

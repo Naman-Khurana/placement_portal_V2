@@ -21,7 +21,7 @@ export async function editCompanyDrive(driveId,updateDrive) {
 }
 
 export async function updateCompanyDriveStatus(driveId,status) {
-    return await api.patch(COMPANY_DRIVES_EDIT_API(driveId),status);
+    return await api.patch(COMPANY_DRIVES_EDIT_API(driveId),{action:status});
 }
 
 export async function getCompanyProfile() {
