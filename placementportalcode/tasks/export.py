@@ -58,14 +58,14 @@ def export_student_applications(student_id):
             ])
             
     body = """
-        Hello,
+    Dear Student,
 
-        Your placement application history has been exported successfully.
+    Your placement application history has been exported successfully.
 
-        The CSV file is attached.
+    The CSV file is attached.
 
-        Regards,
-        Placement Portal
+    Regards,
+    Placement Portal
         """        
             
     

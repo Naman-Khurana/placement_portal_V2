@@ -360,12 +360,12 @@ async function editDrive(row) {
 
     editingDriveId.value = row.driveId;
 
-    driveForm.driveName = row.title;
+    driveForm.driveName = row.driveName;
     driveForm.jobTitle = row.jobTitle;
     driveForm.ctc = row.ctc;
-    driveForm.applicationDeadline = row.applicationDeadline;
+    driveForm.applicationDeadline = row.applicationDeadlineRaw;
     driveForm.eligibilityCriteria = row.eligibilityCriteria;
-    driveForm.jobDescription = row.jobDescription;
+    driveForm.jobDescription = row.jobDesc;
 
     showCreateDriveModal.value = true;
 

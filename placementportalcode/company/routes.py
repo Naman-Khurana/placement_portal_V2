@@ -89,7 +89,6 @@ def drives():
                 "status":new_drive.status,
                 "eligibilityCriteria":new_drive.eligibility_criteria,
                 "applicationDeadline":new_drive.application_deadline,
-                "applicationDeadlineRaw":new_drive.application_deadline.strftime("%Y-%m-%dT%H:%M"),
                 "ctc":new_drive.ctc
             },status_code=201
         )

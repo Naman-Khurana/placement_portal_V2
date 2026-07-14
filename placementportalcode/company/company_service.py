@@ -120,11 +120,13 @@ def get_company_drives(user_id):
             "driveId": drive.drive_id,
             "driveName": drive.drive_name,
             "applicationDeadline": drive.application_deadline.strftime("%d %b %Y"),
+            "applicationDeadlineRaw":drive.application_deadline.strftime("%Y-%m-%dT%H:%M"),
             "applicationCount":application_count,
             "jobTitle":drive.job_title,
             "eligibilityCriteria":drive.eligibility_criteria,
             "ctc":drive.ctc,
-            "status": drive.status
+            "status": drive.status,
+            "jobDescription" : drive.job_desc
         })
 
     

@@ -3,7 +3,20 @@
 
 
 
-        <PageHeader title="My Applications" subtitle="Track all your placement applications." />
+        <PageHeader title="My Applications" subtitle="Track all your placement applications." >
+            <template #actions>
+
+                <AppButton
+                    label="Export CSV"
+                    class="btn-success"
+                    loadingLabel="Exporting..."
+                    :loading="csvLoading"
+                    @click="exportApplications"
+                />
+
+            </template>
+        
+        </PageHeader>
 
 
         <div class="row g-4 mb-4">
@@ -69,7 +82,7 @@ import StatsCard from '../components/StatsCard.vue';
 import PageHeader from '../components/PageHeader.vue';
 import { ref } from 'vue';
 import { onMounted } from 'vue';
-import { getApplication, withdrawStudentApplication } from '../services/StudentService.js';
+import { getApplication, StudentsApplicationExportCSVService, withdrawStudentApplication } from '../services/StudentService.js';
 import DataTable from '../components/DataTable.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import AppButton from '../components/AppButton.vue';
@@ -78,6 +91,7 @@ import AppButton from '../components/AppButton.vue';
 const loading = ref(false)
 const error = ref("")
 
+const csvLoading = ref(false)
 
 onMounted(loadApplication)
 
@@ -118,6 +132,19 @@ const applicationColumns = [
         label: "Action"
     }
 ];
+
+async function exportApplications(){
+    csvLoading.value=true
+    try{
+        await StudentsApplicationExportCSVService();
+        alert("Export has started.The CSV will be emailed to you shortly.")
+    }catch(err){
+        console.log(err)
+    }
+    finally{
+        csvLoading.value=false
+    }
+}
 
 async function withdrawApplication(driveId){
     try{
