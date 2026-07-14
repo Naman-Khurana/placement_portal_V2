@@ -6,7 +6,7 @@
                 <template #actions>
                     <AppButton
                         label="Create Drive +"
-                        @click="showCreateDriveModal = true"
+                        @click="openCreateDriveModal"
                         :disabled="drives.company.approvalStatus !== 'approved' " class="btn-success"
                     />
 
@@ -326,7 +326,7 @@ async function viewDriveApplicants(driveId) {
     try {
         const response = await getCompanyDriveApplications(driveId);
         driveApplicants.value = response.data.data.applications;
-        console.log(driveApplicants.value.applications)
+        console.log(driveApplicants.value)
         showApplicationsModal.value = true;
     } catch (err) {
         console.log(err);
@@ -350,6 +350,13 @@ async function updateApplicationStatus(applicationId, status) {
 
 }
 
+function openCreateDriveModal() {
+    isEditing.value = false;
+    editingDriveId.value = null;
+    resetForm();
+    showCreateDriveModal.value = true;
+}
+
 function viewResume(path) {
     window.open(`http://localhost:5000/${path}`, "_blank");
 }
@@ -365,7 +372,7 @@ async function editDrive(row) {
     driveForm.ctc = row.ctc;
     driveForm.applicationDeadline = row.applicationDeadlineRaw;
     driveForm.eligibilityCriteria = row.eligibilityCriteria;
-    driveForm.jobDescription = row.jobDesc;
+    driveForm.jobDescription = row.jobDescription;
 
     showCreateDriveModal.value = true;
 
@@ -396,7 +403,7 @@ async function createDrive() {
         }
         // const response = null
         if (isEditing.value) {
-            await editCompanyDrive(editingDriveId,driveResponse)
+            await editCompanyDrive(editingDriveId.value,driveResponse)
         }
         else {
              await createCompanyDrive(driveResponse)

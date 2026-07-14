@@ -77,8 +77,9 @@ def drives():
 
         db.session.add(new_drive)
         db.session.commit()
-
-        invalidate_company_dashboard_and_drives_cache()
+        cache.delete_memoized(get_admin_drives)
+        cache.delete_memoized(get_admin_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(user_id)
         return success_response(
             message="Drive created successfully.",
             data={
@@ -97,33 +98,6 @@ def drives():
         db.session.rollback()
         return error_response(message=str(e), status_code=500)
     
-
-# @company_bp.route("drive/<int:dri>/update-applicant-status", methods=[HTTPMethod.POST])
-# def update_applicant_status():
-#     user_id=session.get("user_id")
-#     if not user_id:
-#         return error_response( message ="user not found", status_code=404) 
-    
-    
-#     user=User.query.get(user_id)
-#     if not user or user.role!=RoleEnum.COMPANY  .value:
-#         return error_response(message="user not found", status_code=404)
-    
-
-#     current_company=user.company
-#     if not current_company:
-#         return error_response(message='company not found' , status_code=404)
-
-#     application_id = request.form.get("application_id")
-#     status = request.form.get("status")
-
-#     application = Application.query.get_or_404(application_id)
-
-#     application.status = status
-
-#     db.session.commit()
-
-#     return redirect(request.referrer)
 
 @company_bp.route("/drives/<int:drive_id>/applications",methods=[HTTPMethod.GET])
 def get_drive_applicants(drive_id):
@@ -173,20 +147,6 @@ def get_drive_applicants(drive_id):
         })
         
     
-    
-    
-
-
-# @company_bp.route("/close-drive", methods=[HTTPMethod.POST])
-# def close_drive():
-#     drive_id=request.form.get('drive_id')
-#     drive=PlacementDrive.query.get_or_404(drive_id)
-
-#     drive.status=DriveApprovalStatusEnum.CLOSED.value
-
-#     db.session.commit()
-
-#     return redirect(request.referrer)
 
     
 
@@ -250,7 +210,7 @@ def update_drive(drive_id):
 
 
         if deadline:
-            drive.application_deadline = datetime.strptime(deadline,"%Y-%m-%dT%H:%M").date()
+            drive.application_deadline = datetime.strptime(deadline,"%Y-%m-%dT%H:%M")
 
         if ctc:
             drive.ctc = ctc
@@ -258,7 +218,7 @@ def update_drive(drive_id):
     
         try:
             db.session.commit()
-            invalidate_company_dashboard_and_drives_cache()
+            invalidate_company_dashboard_and_drives_cache(drive.company.user.id)
             cache.delete_memoized(get_admin_drives)
             cache.delete_memoized(get_admin_dashboard_data)
             return success_response(message="drive updated successfully", status_code=200)
@@ -307,8 +267,7 @@ def edit_profile():
    
     try:
         db.session.commit()
-        
-        cache.delete_memoized(get_company_profile,user_id)
+        invalidate_company_dashboard_and_drives_cache(user_id)
         
         return success_response(
             message="company profile updated successfully",
@@ -426,6 +385,9 @@ def update_application_status(application_id):
     try:
 
         db.session.commit()
+        cache.delete_memoized(get_admin_applications)
+        cache.delete_memoized(get_admin_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(user_id)
         return success_response(message="Status updated successfully", status_code=200)
     except Exception as e:
         db.session.rollback()

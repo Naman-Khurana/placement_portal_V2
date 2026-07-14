@@ -143,7 +143,9 @@ def withdraw_application(drive_id):
     try:
         db.session.delete(application)
         db.session.commit()
-        
+        cache.delete_memoized(get_admin_applications)
+        cache.delete_memoized(get_admin_dashboard_data)
+        invalidate_company_dashboard_and_drives_cache(application.drive.company.user.id)
         return success_response(message="Application withdrawn successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
@@ -310,6 +312,8 @@ def update_resume():
         student.resume_path = f"static/uploads/resumes/{filename}"
 
         db.session.commit()
+        cache.delete_memoized(get_student_profile,user_id)
+        
         return success_response(
             message="Resume uploaded successfully",
             data={
