@@ -71,6 +71,7 @@ import { LOGIN_ROUTE } from "../utils/routeConstants"
 import AppInput from "../components/AppInput.vue"
 import { COMPANY_REGISTER_ROUTE } from "../utils/routeConstants"
 import AppAlert from "../components/AppAlert.vue"
+import { validateEmail } from "../utils/emailUtils.js"
 
 const form = reactive({
     name: "",
@@ -119,7 +120,10 @@ function validateForm() {
         errors.confirmPassword = "Password doesn't match."
         isValid = false;
     }
-
+    if(!validateEmail(form.username)){
+        errors.username = "Please enter a valid email address.";
+        isValid=false
+    }
     return isValid;
 }
 

@@ -13,7 +13,13 @@ def get_student_dashboard_data(user_id):
         return error_response(message="Unauthorized",status_code=401)
     user=User.query.get(user_id)
     
-    registered_companies=Company.query.filter_by(approval_status=CompanyEnumStatus.APPROVED.value)
+    registered_companies = (Company.query.join(PlacementDrive)
+        .filter(
+            Company.approval_status == CompanyEnumStatus.APPROVED.value,
+            PlacementDrive.status == DriveApprovalStatusEnum.APPROVED.value,
+            PlacementDrive.application_deadline >= datetime.now()
+        ).distinct()
+    )
     student_applications=Application.query.filter(Application.student_id==user_id).all()
     upcoming_drives= PlacementDrive.query.filter(
             PlacementDrive.status== DriveApprovalStatusEnum.APPROVED.value,

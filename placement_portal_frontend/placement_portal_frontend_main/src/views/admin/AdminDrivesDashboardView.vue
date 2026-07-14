@@ -106,6 +106,11 @@ const driveColumns = [
         label: "Drive Name"
     },
     {
+        key:"company",
+        label: "Company"
+    },
+
+    {
         key: "jobTitle",
         label: "Job Title"
     },

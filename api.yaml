@@ -1,0 +1,322 @@
+info:
+  name: PLACEMENT PORTAL
+item:
+  - name: auth
+    item:
+      - name: register-company
+        request:
+          method: POST
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n    \"company_name\":\"testCompany\",\r\n    \"hr_contact\":\"testh323@postman.in\",\r\n    \"company_website\": \"https://chatgpt1234.com/\",\r\n    \"password\": \"1234\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/auth/register-company
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - auth
+              - register-company
+        response: []
+      - name: login-user
+        request:
+          method: POST
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n    \"username\":\"testvueuser\",\r\n    \"password\": \"1234\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/auth/login
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - auth
+              - login
+        response: []
+      - name: register-student
+        request:
+          method: POST
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n    \"name\": \"email-test-user\",\r\n    \"username\":\"khurananaman2017@gmail.com\",\r\n    \"password\":\"1234\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/auth/register
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - auth
+              - register
+        response: []
+      - name: logout user
+        request:
+          method: POST
+          header: []
+          url:
+            raw: http://localhost:5000/api/auth/logout
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - auth
+              - logout
+        response: []
+  - name: student
+    item:
+      - name: get student dashboard
+        request:
+          method: GET
+          header: []
+          url:
+            raw: http://localhost:5000/api/student/dashboard
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - student
+              - dashboard
+        response: []
+      - name: get-student-profile
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-student-applications
+        request:
+          method: GET
+          header: []
+          url:
+            raw: http://localhost:5000/api/student/applications
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - student
+              - applications
+        response: []
+      - name: student-withdraw-application
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: request_export_csv
+        request:
+          method: POST
+          header: []
+          url:
+            raw: http://localhost:5000/api/student/export
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - student
+              - export
+        response: []
+      - name: student-drive-apply
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-company-active-drives-for-student
+        request:
+          method: GET
+          header: []
+        response: []
+  - name: company
+    item:
+      - name: get_company_activer_drives
+        request:
+          method: GET
+          header: []
+          url:
+            raw: http://localhost:5000/api/student/companies/2/drives
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - student
+              - companies
+              - '2'
+              - drives
+        response: []
+      - name: get-company-dashboard
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-company-drives
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: create-new-drive
+        request:
+          method: POST
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n  \"drive_name\": \"Software Engineer Hiring 2026\",\r\n  \"job_title\": \"Software Engineer\",\r\n  \"job_desc\": \"Develop and maintain backend services using Java and Spring Boot.\",\r\n  \"eligibility_criteria\": \"B.Tech CSE/IT, CGPA 7.0+, No active backlogs\",\r\n  \"application_deadline\": \"2026-08-15T23:59\",\r\n  \"ctc\": \"12 LPA\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/company/drives
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - drives
+        response: []
+      - name: update-company-drive
+        request:
+          method: PUT
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n  \"drive_name\": \"Software Engineer Hiring 2026\",\r\n  \"job_title\": \"Software Engineer\",\r\n  \"job_desc\": \"Develop and maintain backend services using Java and Spring Boot.\",\r\n  \"eligibility_criteria\": \"B.Tech CSE/IT, CGPA 7.0+, No active backlogs\",\r\n  \"application_deadline\": \"2026-08-15T23:59\",\r\n  \"ctc\": \"10 LPA\"\r\n}"
+          url:
+            raw: http://localhost:5000/api/company/drives
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - drives
+        response: []
+      - name: get-company-profile
+        request:
+          method: GET
+          header: []
+          url:
+            raw: http://localhost:5000/api/company/profile
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - profile
+        response: []
+      - name: update-drive-status-by-company
+        request:
+          method: PATCH
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n    \"action\":\"close\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/company/drives/9
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - drives
+              - '9'
+        response: []
+      - name: update-application-status-by-company
+        request:
+          method: PATCH
+          header: []
+          body:
+            mode: raw
+            raw: "{\r\n    \"status\":\"shortlisted\"\r\n}"
+            options:
+              raw:
+                language: json
+          url:
+            raw: http://localhost:5000/api/company/applications/6/status
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - applications
+              - '6'
+              - status
+        response: []
+      - name: get-drive-applications-for-company
+        request:
+          method: GET
+          header: []
+          url:
+            raw: http://localhost:5000/api/company/drives/9/applications
+            protocol: http
+            host:
+              - localhost
+            port: '5000'
+            path:
+              - api
+              - company
+              - drives
+              - '9'
+              - applications
+        response: []
+  - name: admin
+    item:
+      - name: get-admin-dashboard
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-companies-admin
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-drives-admin
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-students-admin
+        request:
+          method: GET
+          header: []
+        response: []
+      - name: get-applications-admin
+        request:
+          method: GET
+          header: []
+        response: []

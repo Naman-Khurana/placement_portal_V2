@@ -53,7 +53,7 @@ def logout():
     session.clear();
     return success_response("Logged out successfully",None,200);
 
-@auth_bp.route("/register-company" ,methods=['GET','POST'])
+@auth_bp.route("/register/company" ,methods=['GET','POST'])
 def register_company():
    
     data=request.get_json()

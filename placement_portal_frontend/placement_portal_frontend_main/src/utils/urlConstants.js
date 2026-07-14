@@ -5,7 +5,7 @@ export const LOGOUT_API = AUTH_PREFIX + "/logout"
 export const LOGIN_API = AUTH_PREFIX + "/login"
 export const GET_CURRENT_USER_API = AUTH_PREFIX + "/test"
 export const REGISTER_STUDENT_API = AUTH_PREFIX + "/register"
-export const REGISTER_COMPANY_API= AUTH_PREFIX + "/register-company"
+export const REGISTER_COMPANY_API= AUTH_PREFIX + "/register/company"
 
 
 // student apis

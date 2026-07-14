@@ -54,7 +54,7 @@
 
                     <template #cell-actions="{ row }">
                         <div class="d-flex gap-1">
-                            <AppButton label="Approv" @click="updateDriveStatus(row.driveId,'approve')"  />
+                            <AppButton label="Approve" @click="updateDriveStatus(row.driveId,'approve')"  />
                             <AppButton label="Reject" @click="updateDriveStatus(row.driveId,'reject')" class="btn-danger" />
                         </div>
                     </template>
