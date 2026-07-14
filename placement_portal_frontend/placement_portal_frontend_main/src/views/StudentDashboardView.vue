@@ -7,6 +7,17 @@
                     <template #actions>
 
                         <AppButton label="Edit Profile" @click="editProfile" />
+
+                        <div
+                        v-if="!dashboard.student.eligible"
+                        class="alert alert-warning mt-2 mb-0"
+                        >
+                        <span >
+                            You are not eligible to participate in Upcoming Placement Drives. Please contact the administrator for more information.
+                        </span>
+
+                    
+                    </div>
                     </template>
                 </PageHeader>
 
@@ -16,7 +27,7 @@
                 <DashboardSection title="Approved Companies" subtitle="Companies Currently Hiring">
                     <DataTable :columns="companyColumns" :rows="dashboard.approvedCompanies">
                         <template #cell-actions="{ row }">
-                            <AppButton label="View Drives" @click="viewCompanyDrives(row.id)">
+                            <AppButton  label="View Drives" @click="viewCompanyDrives(row.id)" :disabled="!dashboard.student.eligible">
                             </AppButton>
 
                         </template>
@@ -92,7 +103,8 @@ const dashboard = ref({
         department: null,
         id: null,
         name: "",
-        resumeUploaded: false
+        resumeUploaded: false,
+        eligible: true
     },
     stats: {
         applications: 0,

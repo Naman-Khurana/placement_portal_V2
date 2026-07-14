@@ -14,7 +14,7 @@
         </div>
 
         <div class="d-flex justify-content-end mt-4">
-            <AppButton label="Save" />
+            <AppButton label="Save" loadingLabel="Saving..." />
         </div>
 
     </form>
@@ -25,6 +25,7 @@
 <script setup>
 import AppButton from './AppButton.vue'
 import AppInput from './AppInput.vue';
+import { ref } from 'vue';
 
 
 defineProps({

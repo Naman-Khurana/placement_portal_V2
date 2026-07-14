@@ -401,6 +401,7 @@ async function createDrive() {
             "eligibility_criteria": driveForm.eligibilityCriteria,
             "job_desc": driveForm.jobDescription
         }
+        console.log(driveResponse)
         // const response = null
         if (isEditing.value) {
             await editCompanyDrive(editingDriveId.value,driveResponse)

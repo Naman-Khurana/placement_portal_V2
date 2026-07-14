@@ -52,7 +52,8 @@ def get_student_dashboard_data(user_id):
                 "id":user.id,
                 "name":user.name,
                 "department":user.department,
-                "resumeUploaded": bool(user.resume_path)
+                "resumeUploaded": bool(user.resume_path),
+                "eligible": user.eligible
             },
             "stats" : stats,
             "approvedCompanies" : approved_companies,

@@ -207,14 +207,28 @@ def update_drive(drive_id):
         data = request.get_json()
         deadline = data.get("application_deadline")
         ctc = data.get("ctc")
-
+        job_desc = data.get("job_desc")
+        drive_name=data.get("drive_name")
+        job_title= data.get("job_title")
+        eligibility_criteria=data.get("eligibility_criteria")
 
         if deadline:
             drive.application_deadline = datetime.strptime(deadline,"%Y-%m-%dT%H:%M")
 
         if ctc:
             drive.ctc = ctc
-
+            
+        if job_desc:
+            drive.job_desc=job_desc
+            
+        if drive_name and drive.drive_name!= drive_name:
+            drive.drive_name=drive_name
+            
+        if job_title and drive.job_title!=job_title:
+            drive.job_title= job_title
+    
+        if eligibility_criteria and drive.eligibility_criteria!=eligibility_criteria:
+            drive.eligibility_criteria=eligibility_criteria
     
         try:
             db.session.commit()

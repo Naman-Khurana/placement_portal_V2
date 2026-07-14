@@ -5,7 +5,7 @@
             <div class="ms-auto">
                
             </div>
-            <AppButton label="Logout" loading-label="Logging out..." type="danger" @click="logoutUser()">Logout</AppButton>
+            <AppButton label="Logout" :loading="loading"  loadingLabel="Logging out..." type="danger" @click="logoutUser()">Logout</AppButton>
         </div>
     </nav>
 </template>
@@ -16,12 +16,23 @@ import AppButton from './AppButton.vue';
 import { useAuthStore } from '../stores/AuthStore.js';
 import { useRouter } from "vue-router"
 import { LOGIN_ROUTE } from '../utils/routeConstants';
+import { ref } from 'vue';
 const authStore= useAuthStore()
 const router = useRouter()
+const loading= ref(false)
+
 
 async function logoutUser() {
-    await authStore.logout()
+    loading.value= true;
+    try{
+        await authStore.logout()
 
-    router.push(LOGIN_ROUTE)
+        router.push(LOGIN_ROUTE)
+    } catch(err){
+        console.log(err)
+    }finally{
+        loading.value=false;
+    }
+ 
 }
 </script>
