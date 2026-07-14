@@ -99,32 +99,32 @@ def drives():
         return error_response(message=str(e), status_code=500)
     
 
-@company_bp.route("drive/<int:dri>/update-applicant-status", methods=[HTTPMethod.POST])
-def update_applicant_status():
-    user_id=session.get("user_id")
-    if not user_id:
-        return error_response( message ="user not found", status_code=404) 
+# @company_bp.route("drive/<int:dri>/update-applicant-status", methods=[HTTPMethod.POST])
+# def update_applicant_status():
+#     user_id=session.get("user_id")
+#     if not user_id:
+#         return error_response( message ="user not found", status_code=404) 
     
     
-    user=User.query.get(user_id)
-    if not user or user.role!=RoleEnum.COMPANY  .value:
-        return error_response(message="user not found", status_code=404)
+#     user=User.query.get(user_id)
+#     if not user or user.role!=RoleEnum.COMPANY  .value:
+#         return error_response(message="user not found", status_code=404)
     
 
-    current_company=user.company
-    if not current_company:
-        return error_response(message='company not found' , status_code=404)
+#     current_company=user.company
+#     if not current_company:
+#         return error_response(message='company not found' , status_code=404)
 
-    application_id = request.form.get("application_id")
-    status = request.form.get("status")
+#     application_id = request.form.get("application_id")
+#     status = request.form.get("status")
 
-    application = Application.query.get_or_404(application_id)
+#     application = Application.query.get_or_404(application_id)
 
-    application.status = status
+#     application.status = status
 
-    db.session.commit()
+#     db.session.commit()
 
-    return redirect(request.referrer)
+#     return redirect(request.referrer)
 
 @company_bp.route("/drives/<int:drive_id>/applications",methods=[HTTPMethod.GET])
 def get_drive_applicants(drive_id):
@@ -178,16 +178,16 @@ def get_drive_applicants(drive_id):
     
 
 
-@company_bp.route("/close-drive", methods=[HTTPMethod.POST])
-def close_drive():
-    drive_id=request.form.get('drive_id')
-    drive=PlacementDrive.query.get_or_404(drive_id)
+# @company_bp.route("/close-drive", methods=[HTTPMethod.POST])
+# def close_drive():
+#     drive_id=request.form.get('drive_id')
+#     drive=PlacementDrive.query.get_or_404(drive_id)
 
-    drive.status=DriveApprovalStatusEnum.CLOSED.value
+#     drive.status=DriveApprovalStatusEnum.CLOSED.value
 
-    db.session.commit()
+#     db.session.commit()
 
-    return redirect(request.referrer)
+#     return redirect(request.referrer)
 
     
 
