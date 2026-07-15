@@ -26,7 +26,7 @@
                  
 
                     <template #cell-actions="{ row }">
-                        <AppButton label="Blacklist" @click="updateDriveStatus(row.companyId,'blacklist')" class="btn-danger" />
+                        <AppButton label="Blacklist" @click="updateCompanyStatus(row.companyId,'blacklist')" class="btn-danger" />
                         
                     
                     </template>

@@ -52,7 +52,7 @@
                 <DataTable   :columns="driveColumns" :rows="companyDrives">
                     <template #cell-actions="{ row }">
                        
-                        <AppButton label="Apply" @click="applyToDrive(row.driveId)" class="btn-success">
+                        <AppButton label="Apply" loadingLabel="Applying..." :loading="applyLoading" @click="applyToDrive(row.driveId)" class="btn-success">
                 
                         </AppButton>
 
@@ -95,6 +95,8 @@ const selectedCompany = ref(null);
 const companyDrives = ref([]);
 const showCompanyModal = ref(false);
 const modalLoading = ref(false);
+
+const applyLoading=ref(false)
 
 
 
@@ -190,6 +192,7 @@ async function viewCompanyDrives(companyId) {
 }
 
 async function applyToDrive(driveId) {
+    applyLoading.value=true;
     try {
         await applyDrive(driveId);
         await viewCompanyDrives(selectedCompany.value.company_id)
@@ -199,6 +202,8 @@ async function applyToDrive(driveId) {
 
     }catch(err){
         console.log(err)
+    }finally{
+        applyLoading.value=false
     }
     
 }

@@ -8,7 +8,7 @@ from placementportalcode.extensions import db
 from placementportalcode.utils.responses import success_response,error_response
 from placementportalcode.utils.db import save,commit_session
 from flask import jsonify
-
+from placementportalcode.admin.admin_service import *
 
 auth_bp=Blueprint("auth",__name__,url_prefix="/api/auth")
 
@@ -94,6 +94,8 @@ def register_company():
 
         db.session.add(company)
         db.session.commit()
+        cache.delete_memoized(get_admin_dashboard_data)
+        cache.delete_memoized(get_admin_companies)
         print("check 3")
         return success_response("Organization Registerd Successfully",
                                   {
@@ -139,6 +141,8 @@ def signup():
     #save and commit the user to db
     save(user)
     commit_session()
+    cache.delete_memoized(get_admin_dashboard_data)
+    cache.delete_memoized(get_admin_students)
 
     return success_response("Student Registerd Successfully", 
         {

@@ -126,7 +126,7 @@
 
                 <template #cell-resume="{ row }">
 
-                    <AppButton label="View Resume" @click="viewResume(row.resume)" class="btn-secondary" />
+                    <AppButton v-if="row.resume" label="View Resume" @click="viewResume(row.resume)" class="btn-secondary" />
 
                 </template>
 

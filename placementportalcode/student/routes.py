@@ -114,9 +114,9 @@ def apply_drive(drive_id):
     except Exception as e:
         db.session.rollback()
         return error_response(message=str(e) , status_code=500) 
-@student_bp.route("/drives/<drive_id>/applications", methods=[HTTPMethod.DELETE])
+@student_bp.route("/drives/<int:drive_id>/applications", methods=[HTTPMethod.DELETE])
 def withdraw_application(drive_id):
-
+    print("Withdraw route hit", drive_id)
     user_id=session.get("user_id")
     
     if not user_id:
@@ -137,15 +137,24 @@ def withdraw_application(drive_id):
         Application.student_id == user_id,
         Application.drive_id == drive_id
     ).first()
+    print("user_id",user_id)
+    print("drive_id",drive_id)
     if not application:
+        print("applicaation now found")
         return error_response(message="Application not found", status_code=404 )
     
     try:
+        company_user_id = application.drive.company.user.id
+
         db.session.delete(application)
         db.session.commit()
+        print("error 1")
         cache.delete_memoized(get_admin_applications)
+        print("error 2")
         cache.delete_memoized(get_admin_dashboard_data)
-        invalidate_company_dashboard_and_drives_cache(application.drive.company.user.id)
+        print("error 3")
+        invalidate_company_dashboard_and_drives_cache(company_user_id)
+        print("error 4")
         return success_response(message="Application withdrawn successfully",status_code=200)
     except Exception as e:
         db.session.rollback()
